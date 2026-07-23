@@ -879,10 +879,10 @@ export default function CheckoutPage({
         <div className="w-full max-w-md space-y-6">
           {/* Back navigation to Checkout */}
           <button
-            onClick={handleBackToCheckout}
+            onClick={onBackToDashboard}
             className="px-4 py-2 bg-white hover:bg-amber-50/30 text-[#4A3222] border border-[#FFCBA4] rounded-xl font-bold text-xs transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
           >
-            ← Kembali ke Checkout
+            ← Kembali ke Dashboard
           </button>
 
           {/* Receipt Card Element (Captured by html-to-image) */}
