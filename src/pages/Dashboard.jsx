@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 import Banner from '../components/Banner';
@@ -8,6 +8,7 @@ import BottomCheckout from '../components/BottomCheckout';
 import RekapPage from './RekapPage';
 import { products as initialProducts, categories } from '../data/products';
 import LoginModal from '../components/LoginModal';
+import { supabase } from '../lib/supabase';
 
 export default function Dashboard() {
   const [role, setRole] = useState("Guest");
@@ -18,6 +19,42 @@ export default function Dashboard() {
   const [products, setProducts] = useState(initialProducts);
   const [loginOpen, setLoginOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [notification, setNotification] = useState('');
+
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(''), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          const dbProducts = data.map((p) => ({
+            id: p.id,
+            nama: p.name,
+            harga: p.price,
+            kategori: p.category,
+            gambar: p.image_url,
+            stok: p.stock
+          }));
+          setProducts([...dbProducts, ...initialProducts]);
+        }
+      } catch (err) {
+        console.error('Gagal memuat produk dari Supabase:', err);
+      }
+    };
+    fetchProducts();
+  }, []);
 
   const handleLogout = () => {
     setRole('Guest');
@@ -92,16 +129,15 @@ export default function Dashboard() {
 
   const handleAddProductSubmit = (data) => {
     const newProduct = {
-      id: Date.now(),
+      id: data.id || Date.now(),
       nama: data.nama || 'Produk Baru',
       harga: Number(data.harga) || 0,
-      kategori: data.kategori || 'Keripik',
-      gambar: data.gambarPreview || '',
+      kategori: data.kategori || 'UMKM',
+      gambar: data.gambarPreview || '' ,
       stok: Number(data.stock) || 0
     };
     setProducts((prev) => [newProduct, ...prev]);
-    console.log('New product (local):', newProduct);
-    alert('Produk ditambahkan secara lokal. Integrasikan Supabase untuk menyimpan permanen.');
+    setNotification('Berhasil! Produk telah ditambahkan ke etalase.');
   };
 
   const cartItemList = Object.values(cart);
@@ -116,7 +152,17 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans pb-24 w-full">
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans pb-24 w-full relative">
+      {/* Toast Notification */}
+      {notification && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] bg-[#E67E22] text-white px-5 py-2.5 rounded-full shadow-xl text-sm font-semibold flex items-center gap-2 animate-[bounce_1s_ease-in-out_infinite]">
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+          </svg>
+          {notification}
+        </div>
+      )}
+
       {/* 1. Navbar (Full Width) */}
       <Navbar
         role={role}

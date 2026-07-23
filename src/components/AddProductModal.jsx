@@ -1,14 +1,16 @@
 import { useState, useMemo, useEffect } from 'react';
-import { categories as categoryOptions } from '../data/products';
+import { supabase } from '../lib/supabase';
 
 export default function AddProductModal({ isOpen, onClose, onSubmit }) {
-  const validCategories = categoryOptions.filter((cat) => cat !== 'Semua');
   const [nama, setNama] = useState('');
   const [harga, setHarga] = useState('');
   const [isHargaFocused, setIsHargaFocused] = useState(false);
   const [stock, setStock] = useState('');
-  const [kategori, setKategori] = useState(validCategories[0] || 'Keripik');
+  const [category, setCategory] = useState('Kue & Roti');
   const [gambarFile, setGambarFile] = useState(null);
+  
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const preview = useMemo(() => {
     if (!gambarFile) return '';
@@ -22,6 +24,14 @@ export default function AddProductModal({ isOpen, onClose, onSubmit }) {
       return () => {
         document.body.style.overflow = prev;
       };
+    } else {
+      setNama('');
+      setHarga('');
+      setStock('');
+      setCategory('Kue & Roti');
+      setGambarFile(null);
+      setError(null);
+      setLoading(false);
     }
     return undefined;
   }, [isOpen]);
@@ -37,18 +47,69 @@ export default function AddProductModal({ isOpen, onClose, onSubmit }) {
     setGambarFile(file);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const payload = {
-      nama: nama.trim(),
-      harga: Number(harga) || 0,
-      kategori,
-      stock: Number(stock) || 0,
-      gambarFile,
-      gambarPreview: preview
-    };
-    onSubmit?.(payload);
-    onClose?.();
+    setLoading(true);
+    setError(null);
+
+    try {
+      let imageUrl = null;
+
+      if (gambarFile) {
+        const fileExt = gambarFile.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `public/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('product-images')
+          .upload(filePath, gambarFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('product-images')
+          .getPublicUrl(filePath);
+
+        imageUrl = publicUrl;
+      } else {
+        throw new Error("Mohon tambahkan foto barang terlebih dahulu.");
+      }
+
+      const { data: insertedProduct, error: dbError } = await supabase
+        .from('products')
+        .insert([
+          {
+            name: nama.trim(),
+            price: Number(harga) || 0,
+            stock: Number(stock) || 0,
+            category: category,
+            image_url: imageUrl,
+            is_active: true
+          }
+        ])
+        .select()
+        .single();
+
+      if (dbError) throw dbError;
+
+      const payload = {
+        id: insertedProduct?.id || Date.now(),
+        nama: nama.trim(),
+        harga: Number(harga) || 0,
+        stock: Number(stock) || 0,
+        kategori: category,
+        gambarPreview: imageUrl
+      };
+      
+      onSubmit?.(payload);
+      onClose?.();
+      
+    } catch (err) {
+      console.error("Error adding product:", err);
+      setError(err.message || 'Terjadi kesalahan saat menambahkan barang');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -56,8 +117,14 @@ export default function AddProductModal({ isOpen, onClose, onSubmit }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <form onSubmit={handleSubmit} className="relative bg-white rounded-lg w-full max-w-md p-5 z-10 shadow-lg">
+      <form onSubmit={handleSubmit} className="relative bg-white rounded-lg w-full max-w-md p-5 z-10 shadow-lg max-h-[90vh] overflow-y-auto">
         <h3 className="text-sm font-bold text-slate-800 mb-3">Tambah Barang</h3>
+
+        {error && (
+          <div className="mb-4 p-2 bg-red-50 text-red-600 border border-red-200 text-xs rounded font-medium">
+            Error: {error}
+          </div>
+        )}
 
         <label className="block text-xs text-slate-600">Foto</label>
         <div className="mb-2">
@@ -70,7 +137,7 @@ export default function AddProductModal({ isOpen, onClose, onSubmit }) {
           />
           <label
             htmlFor="gambar-file"
-            className="inline-flex items-center justify-center px-4 py-2 bg-[#E67E22] hover:bg-[#D96A12] text-white rounded cursor-pointer text-sm font-semibold"
+            className="inline-flex items-center justify-center px-4 py-2 bg-[#E67E22] hover:bg-[#D96A12] text-white rounded cursor-pointer text-sm font-semibold transition-colors"
           >
             Tambah Gambar
           </label>
@@ -79,33 +146,28 @@ export default function AddProductModal({ isOpen, onClose, onSubmit }) {
           )}
         </div>
         {preview && (
-          <div className="mb-2">
+          <div className="mb-3">
             <img src={preview} alt="preview" className="w-32 h-20 object-cover rounded" />
           </div>
         )}
 
-        <label className="block text-xs text-slate-600">Nama Barang</label>
-        <input required value={nama} onChange={(e) => setNama(e.target.value)} className="w-full mb-2 px-2 py-1 border rounded text-sm" />
+        <label className="block text-xs text-slate-600 mb-1">Nama Barang</label>
+        <input required value={nama} onChange={(e) => setNama(e.target.value)} className="w-full mb-3 px-3 py-2 border rounded text-sm focus:ring-1 focus:ring-[#E67E22] outline-none" />
 
-        <label className="block text-xs text-slate-600">Kategori</label>
-        <select
-          value={kategori}
-          onChange={(e) => setKategori(e.target.value)}
-          className="w-full mb-2 px-2 py-1 border rounded text-sm"
-        >
-          {validCategories.map((cat) => (
-            <option key={cat} value={cat}>{cat}</option>
-          ))}
+        <label className="block text-xs text-slate-600 mb-1">Kategori</label>
+        <select required value={category} onChange={(e) => setCategory(e.target.value)} className="w-full mb-3 px-3 py-2 border rounded text-sm focus:ring-1 focus:ring-[#E67E22] outline-none bg-white">
+          <option value="Kue & Roti">Kue & Roti</option>
+          <option value="Keripik">Keripik</option>
+          <option value="Sambal">Sambal</option>
         </select>
 
-        <label className="block text-xs text-slate-600">Harga Jual (IDR)</label>
+        <label className="block text-xs text-slate-600 mb-1">Harga Jual (IDR)</label>
         <input
           required
           value={isHargaFocused ? harga : (harga ? new Intl.NumberFormat('id-ID').format(Number(harga)) : '')}
           onChange={(e) => setHarga(e.target.value.replace(/[^0-9]/g, ''))}
           type="text"
           inputMode="numeric"
-          pattern="[0-9]*"
           min="0"
           onFocus={() => setIsHargaFocused(true)}
           onBlur={() => setIsHargaFocused(false)}
@@ -117,15 +179,17 @@ export default function AddProductModal({ isOpen, onClose, onSubmit }) {
               e.preventDefault();
             }
           }}
-          className="w-full mb-2 px-2 py-1 border rounded text-sm"
+          className="w-full mb-3 px-3 py-2 border rounded text-sm focus:ring-1 focus:ring-[#E67E22] outline-none"
         />
 
-        <label className="block text-xs text-slate-600">Stok (disimpan, tidak ditampilkan)</label>
-        <input value={stock} onChange={(e) => setStock(e.target.value)} type="number" min="0" className="w-full mb-4 px-2 py-1 border rounded text-sm" />
+        <label className="block text-xs text-slate-600 mb-1">Stok Awal</label>
+        <input required value={stock} onChange={(e) => setStock(e.target.value)} type="number" min="0" className="w-full mb-5 px-3 py-2 border rounded text-sm focus:ring-1 focus:ring-[#E67E22] outline-none" />
 
         <div className="flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="px-3 py-1.5 bg-white border rounded text-sm">Batal</button>
-          <button type="submit" className="px-3 py-1.5 bg-[#E67E22] text-white rounded text-sm">Simpan</button>
+          <button type="button" onClick={onClose} disabled={loading} className="px-4 py-2 bg-white border rounded text-sm font-medium hover:bg-slate-50 disabled:opacity-50">Batal</button>
+          <button type="submit" disabled={loading} className="px-4 py-2 bg-[#E67E22] text-white rounded text-sm font-bold hover:bg-[#D96A12] disabled:opacity-50 transition-colors">
+            {loading ? 'Menyimpan...' : 'Simpan Barang'}
+          </button>
         </div>
       </form>
     </div>
