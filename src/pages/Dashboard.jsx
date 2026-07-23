@@ -5,7 +5,6 @@ import Banner from '../components/Banner';
 import SearchBar from '../components/SearchBar';
 import ProductCard from '../components/ProductCard';
 import BottomCheckout from '../components/BottomCheckout';
-import CheckoutPage from './CheckoutPage';
 import RekapPage from './RekapPage';
 import { products as initialProducts, categories } from '../data/products';
 import LoginModal from '../components/LoginModal';
@@ -77,9 +76,9 @@ export default function Dashboard() {
     setCart({});
   };
 
-  // Navigate to checkout
+  // Placeholder checkout button; no navigation or notification
   const handleGoToCheckout = () => {
-    setCurrentView("Checkout");
+    // intentionally blank; checkout flow will be continued by the team later
   };
 
   // Filter products by search query and category
@@ -106,16 +105,6 @@ export default function Dashboard() {
   };
 
   const cartItemList = Object.values(cart);
-
-  // Render Checkout Page
-  if (currentView === "Checkout") {
-    return (
-      <CheckoutPage
-        cartItems={cartItemList}
-        onBackToDashboard={() => setCurrentView("Home")}
-      />
-    );
-  }
 
   // Render Rekap Page
   if (currentView === "Rekap Barang") {
