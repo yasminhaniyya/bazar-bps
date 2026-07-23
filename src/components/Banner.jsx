@@ -19,11 +19,10 @@ export default function Banner({ isAdmin = false, onAddProduct }) {
       {/* Text Content */}
       <div className="space-y-2 text-center sm:text-left">
         <h2 className="text-xl sm:text-2xl font-bold leading-tight text-[#3c2a1e]" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-          Bazar Dharma Wanita Persatuan
+          BAZAR<br />
+          DWP BPS PROVINSI JAWA TIMUR
         </h2>
-        <p className="text-sm font-semibold text-[#3c2a1e]/85">
-          BPS Provinsi Jawa Timur
-        </p>
+        
         <p className="text-xs text-[#3c2a1e]/75 max-w-md mt-1 leading-relaxed">
           Katalog makanan khas, kue kering, dan produk UMKM binaan Dharma Wanita.
         </p>
