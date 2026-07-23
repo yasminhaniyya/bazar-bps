@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 import Banner from '../components/Banner';
@@ -12,16 +12,68 @@ import LoginModal from '../components/LoginModal';
 
 export default function Dashboard() {
   const [role, setRole] = useState("Guest");
-  const [currentView, setCurrentView] = useState("Home");
+  const [currentView, setCurrentView] = useState(() => {
+    const activeScreen = localStorage.getItem('dwp_bps_active_screen');
+    if (activeScreen === 'checkout' || activeScreen === 'receipt') {
+      return 'Checkout';
+    }
+    if (activeScreen === 'rekap') {
+      return 'Rekap Barang';
+    }
+    return 'Home';
+  });
   const [activeCategory, setActiveCategory] = useState("Semua");
   const [searchQuery, setSearchQuery] = useState("");
-  const [cart, setCart] = useState({});
+  const [cart, setCart] = useState(() => {
+    try {
+      const savedCart = localStorage.getItem('dwp_bps_cart');
+      return savedCart ? JSON.parse(savedCart) : {};
+    } catch (e) {
+      return {};
+    }
+  });
+
+  // Persist cart to localStorage
+  useEffect(() => {
+    localStorage.setItem('dwp_bps_cart', JSON.stringify(cart));
+  }, [cart]);
+
+  // Sync currentView with localStorage
+  useEffect(() => {
+    if (currentView === 'Home') {
+      localStorage.setItem('dwp_bps_active_screen', 'home');
+    } else if (currentView === 'Rekap Barang') {
+      localStorage.setItem('dwp_bps_active_screen', 'rekap');
+    } else if (currentView === 'Checkout') {
+      const active = localStorage.getItem('dwp_bps_active_screen');
+      if (active !== 'receipt' && active !== 'checkout') {
+        localStorage.setItem('dwp_bps_active_screen', 'checkout');
+      }
+    }
+  }, [currentView]);
   const [products, setProducts] = useState(initialProducts);
   const [loginOpen, setLoginOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  // Sync role with URL query parameter or localStorage on mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const roleParam = urlParams.get('role');
+    let activeRole = localStorage.getItem('user_role') || 'Guest';
+
+    if (roleParam === 'admin') {
+      activeRole = 'Admin';
+      localStorage.setItem('user_role', 'Admin');
+    } else if (roleParam === 'guest') {
+      activeRole = 'Guest';
+      localStorage.removeItem('user_role');
+    }
+    setRole(activeRole);
+  }, []);
+
   const handleLogout = () => {
     setRole('Guest');
+    localStorage.removeItem('user_role');
     setIsSidebarOpen(false);
     if (currentView === 'Rekap Barang') setCurrentView('Home');
   };
@@ -32,6 +84,7 @@ export default function Dashboard() {
       setLoginOpen(true);
     } else {
       setRole("Guest");
+      localStorage.removeItem('user_role');
       if (currentView === "Rekap Barang") {
         setCurrentView("Home");
       }
@@ -42,6 +95,7 @@ export default function Dashboard() {
     // Placeholder: accept any non-empty credentials and set Admin locally.
     if (email && password) {
       setRole('Admin');
+      localStorage.setItem('user_role', 'Admin');
       setLoginOpen(false);
     }
   };
@@ -113,6 +167,11 @@ export default function Dashboard() {
       <CheckoutPage
         cartItems={cartItemList}
         onBackToDashboard={() => setCurrentView("Home")}
+        role={role}
+        setRole={setRole}
+        onAddToCart={handleAddToCart}
+        onRemoveFromCart={handleRemoveFromCart}
+        onClearCart={handleClearCart}
       />
     );
   }
