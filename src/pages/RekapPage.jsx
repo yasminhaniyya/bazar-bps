@@ -9,7 +9,6 @@ export default function RekapPage({ onBackToDashboard }) {
   
   // State untuk Filter, Sort, Search, Pagination
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All'); 
   const [sortOrder, setSortOrder] = useState('desc'); 
   const [page, setPage] = useState(1);
   const itemsPerPage = 10;
@@ -34,17 +33,12 @@ export default function RekapPage({ onBackToDashboard }) {
             invoice_number,
             buyer_name,
             payment_method,
-            status,
             total_price
           ),
           products!inner (
             name
           )
         `);
-
-      if (statusFilter !== 'All') {
-        query = query.eq('orders.status', statusFilter);
-      }
 
       if (searchQuery) {
         query = query.or(
@@ -84,8 +78,7 @@ export default function RekapPage({ onBackToDashboard }) {
   };
 
   const fetchSummary = async () => {
-     let query = supabase.from('order_items').select('quantity, subtotal, orders!inner(id, status)');
-     if (statusFilter !== 'All') query = query.eq('orders.status', statusFilter);
+     let query = supabase.from('order_items').select('quantity, subtotal, orders!inner(id)');
      
      const { data: sumData, error } = await query;
      if (sumData && !error) {
@@ -95,7 +88,7 @@ export default function RekapPage({ onBackToDashboard }) {
 
         sumData.forEach(item => {
             uniqueOrders.add(item.orders.id);
-            if(item.orders.status === 'Paid') revenue += item.subtotal; 
+            revenue += item.subtotal; 
             productsSold += item.quantity;
         });
 
@@ -109,7 +102,7 @@ export default function RekapPage({ onBackToDashboard }) {
 
   useEffect(() => {
     fetchData();
-  }, [page, statusFilter, sortOrder, searchQuery]);
+  }, [page, sortOrder, searchQuery]);
 
   return (
     <div className="min-h-screen bg-white p-4 sm:p-8 text-[#4A3222]/80 font-['Plus_Jakarta_Sans']">
@@ -172,17 +165,6 @@ export default function RekapPage({ onBackToDashboard }) {
             />
 
             <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
-              {/* Status Filter */}
-              <select 
-                className="w-full sm:w-auto px-4 py-2 bg-white border border-[#FFCBA4] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D96A12] text-sm text-[#4A3222]"
-                value={statusFilter}
-                onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-              >
-                <option value="All">Semua Status</option>
-                <option value="Pending">Pending</option>
-                <option value="Paid">Paid</option>
-              </select>
-
               {/* Sort */}
               <select 
                 className="w-full sm:w-auto px-4 py-2 bg-white border border-[#FFCBA4] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D96A12] text-sm text-[#4A3222]"
@@ -209,14 +191,13 @@ export default function RekapPage({ onBackToDashboard }) {
                   <th className="p-4 font-bold text-center">Jml</th>
                   <th className="p-4 font-bold text-right">Total</th>
                   <th className="p-4 font-bold">Metode</th>
-                  <th className="p-4 font-bold text-center">Status</th>
                 </tr>
               </thead>
               <tbody className="text-sm text-[#4A3222]">
                 {loading ? (
-                  <tr><td colSpan="10" className="text-center p-8 font-medium">Memuat data...</td></tr>
+                  <tr><td colSpan="9" className="text-center p-8 font-medium">Memuat data...</td></tr>
                 ) : data.length === 0 ? (
-                  <tr><td colSpan="10" className="text-center p-8 font-medium">Tidak ada data pesanan.</td></tr>
+                  <tr><td colSpan="9" className="text-center p-8 font-medium">Tidak ada data pesanan.</td></tr>
                 ) : (
                   data.map((item, index) => (
                     <tr key={item.id} className="border-b border-[#FFCBA4]/30 hover:bg-[#FFFBF7] transition-colors">
@@ -229,14 +210,6 @@ export default function RekapPage({ onBackToDashboard }) {
                       <td className="p-4 text-center font-bold">{item.quantity}</td>
                       <td className="p-4 text-right font-bold whitespace-nowrap">{formatRupiah(item.subtotal)}</td>
                       <td className="p-4 whitespace-nowrap">{item.orders.payment_method}</td>
-                      <td className="p-4 text-center whitespace-nowrap">
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold 
-                          ${item.orders.status === 'Paid' ? 'bg-green-100 text-green-700' : 
-                            item.orders.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' : 
-                            'bg-red-100 text-red-700'}`}>
-                          {item.orders.status}
-                        </span>
-                      </td>
                     </tr>
                   ))
                 )}

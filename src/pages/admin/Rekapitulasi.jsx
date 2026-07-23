@@ -13,7 +13,6 @@ export default function Rekapitulasi() {
   
   // State untuk Filter, Sort, Search, Pagination
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All'); 
   const [sortOrder, setSortOrder] = useState('desc'); 
   const [page, setPage] = useState(1);
   const itemsPerPage = 10;
@@ -40,18 +39,12 @@ export default function Rekapitulasi() {
               invoice_number,
               buyer_name,
               payment_method,
-              status,
               total_price
             ),
             products!inner (
               name
             )
           `);
-
-        // 2. Filter Status 
-        if (statusFilter !== 'All') {
-          query = query.eq('orders.status', statusFilter);
-        }
 
         // 3. Search (Pencarian Invoice, Nama Pembeli, atau Produk)
         if (searchQuery) {
@@ -86,8 +79,7 @@ export default function Rekapitulasi() {
         setData(finalData);
 
         // Summary fetch inline to avoid missing dependency warning
-        let summaryQuery = supabase.from('order_items').select('quantity, subtotal, orders!inner(id, status)');
-        if (statusFilter !== 'All') summaryQuery = summaryQuery.eq('orders.status', statusFilter);
+        let summaryQuery = supabase.from('order_items').select('quantity, subtotal, orders!inner(id)');
 
         const { data: sumData, error: sumError } = await summaryQuery;
         if (sumData && !sumError) {
@@ -97,7 +89,7 @@ export default function Rekapitulasi() {
 
           sumData.forEach(item => {
             uniqueOrders.add(item.orders.id);
-            if (item.orders.status === 'Paid') revenue += item.subtotal;
+            revenue += item.subtotal;
             productsSold += item.quantity;
           });
 
@@ -117,7 +109,7 @@ export default function Rekapitulasi() {
     };
 
     void fetchData();
-  }, [page, statusFilter, sortOrder, searchQuery]);
+  }, [page, sortOrder, searchQuery]);
 
   const handleLogout = () => {
     localStorage.removeItem('admin_session');
@@ -175,18 +167,6 @@ export default function Rekapitulasi() {
         />
 
         <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-          {/* Status Filter */}
-          <select 
-            className="w-full sm:w-auto px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900"
-            value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-          >
-            <option value="All">Semua Status</option>
-            <option value="Pending">Pending</option>
-            <option value="Paid">Paid</option>
-            <option value="Cancelled">Cancelled</option>
-          </select>
-
           {/* Sort */}
           <select 
             className="w-full sm:w-auto px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900"
@@ -213,7 +193,7 @@ export default function Rekapitulasi() {
               <th className="p-4 font-semibold text-center whitespace-nowrap">Jml</th>
               <th className="p-4 font-semibold text-right whitespace-nowrap">Total Harga</th>
               <th className="p-4 font-semibold whitespace-nowrap">Metode</th>
-              <th className="p-4 font-semibold text-center whitespace-nowrap">Status</th>
+
             </tr>
           </thead>
           <tbody>
@@ -233,14 +213,6 @@ export default function Rekapitulasi() {
                   <td className="p-4 text-center whitespace-nowrap">{item.quantity}</td>
                   <td className="p-4 text-right font-medium text-gray-800 whitespace-nowrap">{formatRupiah(item.subtotal)}</td>
                   <td className="p-4 whitespace-nowrap">{item.orders.payment_method}</td>
-                  <td className="p-4 text-center whitespace-nowrap">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium 
-                      ${item.orders.status === 'Paid' ? 'bg-green-100 text-green-700' : 
-                        item.orders.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' : 
-                        'bg-red-100 text-red-700'}`}>
-                      {item.orders.status}
-                    </span>
-                  </td>
                 </tr>
               ))
             )}
