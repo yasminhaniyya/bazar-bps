@@ -50,7 +50,7 @@ export default function Navbar({ role = "Guest", onToggleSidebar, onLoginClick }
               <svg className="w-3.5 h-3.5 text-[#3c2a1e]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
               </svg>
-              <span>Login</span>
+              <span>Login Admin</span>
             </button>
           )}
         </div>

@@ -24,8 +24,8 @@ export default function Banner({ isAdmin = false, onAddProduct }) {
                   <img
                     src="/logo-dwp.png"
                     alt="DWP logo"
-                    className="h-10 sm:h-14 md:h-16 lg:h-20 w-auto mr-0 lg:-mr-4"
-                    style={{ maxWidth: '6rem' }}
+                    className="h-10 sm:h-14 md:h-16 lg:h-20 w-auto"
+                    style={{ maxWidth: '6rem', marginRight: '1cm' }}
                   />
   
                   <h3 className="text-sm sm:text-base md:text-lg lg:text-xl font-extrabold leading-tight text-[#3c2a1e] text-center whitespace-nowrap overflow-hidden" style={{ fontFamily: 'Montserrat, sans-serif', maxWidth: '28rem' }}>
@@ -43,9 +43,7 @@ export default function Banner({ isAdmin = false, onAddProduct }) {
             </p>
           </div>
         </div>
-      </div>
-
-      {/* Admin action */}
+      </div>     {/* Admin action */}
       {isAdmin && (
         <div className="flex items-center gap-3">
           <button
