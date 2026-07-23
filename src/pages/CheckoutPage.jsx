@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import * as htmlToImage from 'html-to-image';
 
 // Helper: Convert string to Title Case
 function toTitleCase(str) {
@@ -180,6 +181,34 @@ const fallbackCities = [
   { id: '3471', provinceId: '34', name: 'Kota Yogyakarta' }
 ];
 
+const ReceiptProofImage = ({ src }) => {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    if (src && canvasRef.current) {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+      };
+      // We don't set crossOrigin for data URIs to avoid strict browser CORS blocks
+      img.src = src;
+    }
+  }, [src]);
+
+  return (
+    <canvas 
+      ref={canvasRef} 
+      id="receipt-uploaded-proof"
+      className="max-w-full max-h-full object-contain mx-auto block"
+    />
+  );
+};
+
 export default function CheckoutPage({
   cartItems = [],
   onBackToDashboard,
@@ -324,7 +353,7 @@ export default function CheckoutPage({
   // 3. Draft Persistence & Restore
   useEffect(() => {
     // Check if user has saved profile
-    const savedProfile = localStorage.getItem('dwp_bps_user_profile');
+    const savedProfile = sessionStorage.getItem('dwp_bps_user_profile');
     if (savedProfile) {
       try {
         const parsed = JSON.parse(savedProfile);
@@ -337,7 +366,7 @@ export default function CheckoutPage({
     }
 
     // Restore Form Draft
-    const savedDraft = localStorage.getItem('dwp_bps_form_draft');
+    const savedDraft = sessionStorage.getItem('dwp_bps_form_draft');
     if (savedDraft) {
       try {
         const draft = JSON.parse(savedDraft);
@@ -365,16 +394,16 @@ export default function CheckoutPage({
     }
 
     // Restore Payment Proof
-    const savedProof = localStorage.getItem('dwp_bps_payment_proof');
+    const savedProof = sessionStorage.getItem('dwp_bps_payment_proof');
     if (savedProof) {
       setPaymentProofPreview(savedProof);
     }
 
     // Restore Active Screen
-    const activeScreen = localStorage.getItem('dwp_bps_active_screen');
-    const activeInvoice = localStorage.getItem('dwp_bps_active_invoice');
-    const savedTime = localStorage.getItem('dwp_bps_order_time');
-    const savedReceiptItems = localStorage.getItem('dwp_bps_receipt_items');
+    const activeScreen = sessionStorage.getItem('dwp_bps_active_screen');
+    const activeInvoice = sessionStorage.getItem('dwp_bps_active_invoice');
+    const savedTime = sessionStorage.getItem('dwp_bps_order_time');
+    const savedReceiptItems = sessionStorage.getItem('dwp_bps_receipt_items');
     if (activeScreen === 'receipt' && activeInvoice) {
       setInvoiceNo(activeInvoice);
       setOrderTime(savedTime || '');
@@ -400,7 +429,7 @@ export default function CheckoutPage({
       city: selectedCity,
       cashChecked: isAdminCashChecked
     };
-    localStorage.setItem('dwp_bps_form_draft', JSON.stringify(draft));
+    sessionStorage.setItem('dwp_bps_form_draft', JSON.stringify(draft));
   }, [nama, whatsapp, hotel, kamar, selectedProvince, selectedCity, isAdminCashChecked]);
 
   // Click outside to close dropdown handlers
@@ -425,7 +454,7 @@ export default function CheckoutPage({
 
   // Autofill Action
   const handleAutofill = () => {
-    const savedProfile = localStorage.getItem('dwp_bps_user_profile');
+    const savedProfile = sessionStorage.getItem('dwp_bps_user_profile');
     if (savedProfile) {
       try {
         const profile = JSON.parse(savedProfile);
@@ -497,7 +526,7 @@ export default function CheckoutPage({
     const reader = new FileReader();
     reader.onload = (e) => {
       setPaymentProofPreview(e.target.result);
-      localStorage.setItem('dwp_bps_payment_proof', e.target.result);
+      sessionStorage.setItem('dwp_bps_payment_proof', e.target.result);
     };
     reader.readAsDataURL(file);
   };
@@ -524,7 +553,7 @@ export default function CheckoutPage({
     if (fileInputRef.current) fileInputRef.current.value = '';
     setPaymentProofFile(null);
     setPaymentProofPreview(null);
-    localStorage.removeItem('dwp_bps_payment_proof');
+    sessionStorage.removeItem('dwp_bps_payment_proof');
   };
 
   const handleCopyBankAccount = (accountNumber) => {
@@ -607,11 +636,11 @@ export default function CheckoutPage({
         hotel,
         kamar
       };
-      localStorage.setItem('dwp_bps_user_profile', JSON.stringify(userProfile));
-      localStorage.setItem('dwp_bps_active_invoice', inv);
-      localStorage.setItem('dwp_bps_active_screen', 'receipt');
-      localStorage.setItem('dwp_bps_order_time', formattedDateTime);
-      localStorage.setItem('dwp_bps_receipt_items', JSON.stringify(cartItems));
+      sessionStorage.setItem('dwp_bps_user_profile', JSON.stringify(userProfile));
+      sessionStorage.setItem('dwp_bps_active_invoice', inv);
+      sessionStorage.setItem('dwp_bps_active_screen', 'receipt');
+      sessionStorage.setItem('dwp_bps_order_time', formattedDateTime);
+      sessionStorage.setItem('dwp_bps_receipt_items', JSON.stringify(cartItems));
 
       setReceiptItems(cartItems);
       setInvoiceNo(inv);
@@ -628,98 +657,29 @@ export default function CheckoutPage({
     const receiptElement = document.getElementById('receipt-card-element');
     if (!receiptElement) return;
 
-    const runDownload = (html2canvasLib) => {
-      showToast('Menyiapkan gambar struk...', 'success');
-      const options = {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        logging: false
-      };
-      html2canvasLib(receiptElement, options).then(canvas => {
-        try {
-          canvas.toBlob((blob) => {
-            if (!blob) {
-              showToast('Gagal membuat gambar struk.', 'error');
-              return;
-            }
-            const blobUrl = URL.createObjectURL(blob);
-            
-            // Buat link download
-            const link = document.createElement('a');
-            link.download = `Receipt-${invoiceNo}.jpg`;
-            link.href = blobUrl;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            // Buka hasil unduhan langsung di tab baru
-            window.open(blobUrl, '_blank');
-            
-            showToast('Struk berhasil diunduh!', 'success');
-            
-            // Bersihkan memori blob setelah 1 menit
-            setTimeout(() => {
-              URL.revokeObjectURL(blobUrl);
-            }, 60000);
-          }, 'image/jpeg', 0.95);
-        } catch (err) {
-          console.error('Gagal membuat JPG receipt', err);
-          showToast('Gagal mengunduh gambar struk. Coba browser lain.', 'error');
-        }
-      }).catch(err => {
-        console.error(err);
-        showToast('Gagal memproses gambar struk.', 'error');
+    showToast('Menyiapkan gambar struk...', 'success');
+    
+    htmlToImage.toJpeg(receiptElement, { quality: 0.95, backgroundColor: '#ffffff', pixelRatio: 2 })
+      .then((dataUrl) => {
+        const link = document.createElement('a');
+        link.download = `Receipt-${invoiceNo}.jpg`;
+        link.href = dataUrl;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        window.open(dataUrl, '_blank');
+        showToast('Struk berhasil diunduh!', 'success');
+      })
+      .catch((err) => {
+        console.error('Gagal memproses gambar struk:', err);
+        showToast('Gagal memproses gambar struk. Coba browser lain.', 'error');
       });
-    };
-
-    if (window.html2canvas) {
-      runDownload(window.html2canvas);
-    } else {
-      showToast('Memuat sistem konversi struk...', 'success');
-      
-      const loadScript = (url, onSuccess, onError) => {
-        const script = document.createElement('script');
-        script.src = url;
-        script.onload = onSuccess;
-        script.onerror = onError;
-        document.body.appendChild(script);
-      };
-
-      // Gunakan standard html2canvas v1.4.1 yang stabil dan dijamin mengekspos window.html2canvas
-      loadScript(
-        'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js',
-        () => {
-          if (window.html2canvas) {
-            runDownload(window.html2canvas);
-          } else {
-            showToast('Gagal memuat library konversi.', 'error');
-          }
-        },
-        () => {
-          // Fallback ke unpkg CDN
-          showToast('Mencoba server cadangan...', 'success');
-          loadScript(
-            'https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.js',
-            () => {
-              if (window.html2canvas) {
-                runDownload(window.html2canvas);
-              } else {
-                showToast('Gagal memuat library dari server cadangan.', 'error');
-              }
-            },
-            () => {
-              showToast('Gagal mengunduh sistem konversi. Periksa koneksi internet.', 'error');
-            }
-          );
-        }
-      );
-    }
   };
 
   // Back to Checkout (Keep Drafts)
   const handleBackToCheckout = () => {
-    localStorage.setItem('dwp_bps_active_screen', 'checkout');
+    sessionStorage.setItem('dwp_bps_active_screen', 'checkout');
     setShowReceipt(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -741,12 +701,12 @@ export default function CheckoutPage({
     setReceiptItems([]);
 
     // Clear specific LocalStorage fields
-    localStorage.setItem('dwp_bps_active_screen', 'checkout');
-    localStorage.removeItem('dwp_bps_active_invoice');
-    localStorage.removeItem('dwp_bps_form_draft');
-    localStorage.removeItem('dwp_bps_payment_proof');
-    localStorage.removeItem('dwp_bps_order_time');
-    localStorage.removeItem('dwp_bps_receipt_items');
+    sessionStorage.setItem('dwp_bps_active_screen', 'checkout');
+    sessionStorage.removeItem('dwp_bps_active_invoice');
+    sessionStorage.removeItem('dwp_bps_form_draft');
+    sessionStorage.removeItem('dwp_bps_payment_proof');
+    sessionStorage.removeItem('dwp_bps_order_time');
+    sessionStorage.removeItem('dwp_bps_receipt_items');
 
     // Clear cart in parent Dashboard
     onClearCart?.();
@@ -804,14 +764,17 @@ export default function CheckoutPage({
             ← Kembali ke Checkout
           </button>
 
-          {/* Receipt Card Element (Captured by html2canvas) */}
+          {/* Receipt Card Element (Captured by html-to-image) */}
           <div
             id="receipt-card-element"
-            className="bg-white rounded-3xl shadow-md border border-slate-200/60 p-6 sm:p-8 space-y-5 text-[#4A3222] relative overflow-hidden"
+            className="bg-gradient-to-b from-white to-[#FFF8F0] rounded-3xl shadow-xl border border-[#FFCBA4]/40 p-6 sm:p-8 space-y-5 text-[#4A3222] relative overflow-hidden"
           >
+            {/* Top decorative accent */}
+            <div className="absolute top-0 left-0 right-0 h-2.5 bg-gradient-to-r from-[#FFCBA4] via-[#F29C5A] to-[#FFCBA4]"></div>
+
             {/* Title */}
-            <div className="text-center pb-2">
-              <h2 className="font-black text-[#4A3222] tracking-wide text-base sm:text-lg">RECEIPT PEMBELIAN</h2>
+            <div className="text-center pb-2 pt-2">
+              <h2 className="font-black text-[#D97736] tracking-wide text-base sm:text-lg drop-shadow-sm">RECEIPT PEMBELIAN</h2>
             </div>
 
             {/* Delivered Info */}
@@ -839,21 +802,21 @@ export default function CheckoutPage({
               </div>
             </div>
 
-            <div className="border-t border-dashed border-slate-200 my-2"></div>
+            <div className="border-t-[1.5px] border-dashed border-[#F29C5A]/60 my-2"></div>
 
             {/* Center Info Box */}
-            <div className="bg-[#FFFBF7] rounded-2xl p-4 text-center text-xs font-black text-[#4A3222] space-y-1.5 border border-[#FFCBA4]/20 shadow-3xs">
-              <p className="tracking-wide text-sm">{hotel.toUpperCase()}</p>
+            <div className="bg-[#FFFBF7] rounded-2xl p-4 text-center text-xs font-black text-[#4A3222] space-y-1.5 border border-[#F29C5A]/30 shadow-3xs">
+              <p className="tracking-wide text-sm text-[#D97736]">{hotel.toUpperCase()}</p>
               <p className="font-semibold text-slate-500">{whatsapp}</p>
               <p className="font-semibold text-slate-500">Kamar No: {kamar}</p>
             </div>
 
             {/* Ref Code */}
-            <div className="text-center font-extrabold text-xs text-[#4A3222] tracking-wider my-3">
+            <div className="text-center font-extrabold text-xs text-[#D97736] tracking-wider my-3">
               Ref. {invoiceNo}
             </div>
 
-            <div className="border-t border-dashed border-slate-200 my-2"></div>
+            <div className="border-t-[1.5px] border-dashed border-[#F29C5A]/60 my-2"></div>
 
             {/* Items Table */}
             <div className="space-y-3 text-[11px] sm:text-xs">
@@ -861,28 +824,33 @@ export default function CheckoutPage({
                 <div key={item.id} className="flex justify-between items-center gap-4 text-[#4A3222] font-semibold">
                   <span className="flex-1 font-bold text-[#4A3222] text-left leading-tight">{item.nama}</span>
                   <span className="text-slate-400 font-bold min-w-8 text-center">{item.quantity}</span>
-                  <span className="text-slate-400 font-bold min-w-16 text-right">{(item.harga).toLocaleString('id-ID')}</span>
-                  <span className="text-[#4A3222] font-black min-w-20 text-right">{(item.harga * item.quantity).toLocaleString('id-ID')}</span>
+                  <span className="text-[#F29C5A] font-bold min-w-16 text-right">{(item.harga).toLocaleString('id-ID')}</span>
+                  <span className="text-[#D97736] font-black min-w-20 text-right">{(item.harga * item.quantity).toLocaleString('id-ID')}</span>
                 </div>
               ))}
             </div>
 
-            <div className="border-t border-dashed border-slate-200 my-2"></div>
+            <div className="border-t-[1.5px] border-dashed border-[#F29C5A]/60 my-2"></div>
 
             {/* Subtotal, Biaya Pengiriman, Total */}
             <div className="space-y-2 text-[11px] sm:text-xs font-semibold text-slate-500">
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400 font-bold">Subtotal</span>
-                <span className="text-slate-400 font-bold text-center translate-x-[-12px]">{currentItems.reduce((acc, i) => acc + i.quantity, 0)}</span>
-                <span className="text-[#4A3222] font-black text-right">{(currentSubtotal).toLocaleString('id-ID')}</span>
+              <div className="flex justify-between items-center gap-4">
+                <span className="flex-1 text-slate-400 font-bold text-left">Subtotal</span>
+                <span className="text-slate-400 font-bold min-w-8 text-center">{currentItems.reduce((acc, i) => acc + i.quantity, 0)}</span>
+                <span className="min-w-16 text-right"></span>
+                <span className="text-[#4A3222] font-black min-w-20 text-right">{(currentSubtotal).toLocaleString('id-ID')}</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400 font-bold">Biaya Pengiriman</span>
-                <span className="text-[#4A3222] font-bold text-right">0</span>
+              <div className="flex justify-between items-center gap-4">
+                <span className="flex-1 text-slate-400 font-bold text-left">Biaya Pengiriman</span>
+                <span className="min-w-8 text-center"></span>
+                <span className="min-w-16 text-right"></span>
+                <span className="text-[#4A3222] font-bold min-w-20 text-right">0</span>
               </div>
-              <div className="flex justify-between items-center text-sm font-black text-[#4A3222] pt-1">
-                <span>Total</span>
-                <span className="text-base text-[#4A3222] font-black">{(currentTotal).toLocaleString('id-ID')}</span>
+              <div className="flex justify-between items-center gap-4 text-sm font-black text-[#4A3222] pt-1">
+                <span className="flex-1 text-left">Total</span>
+                <span className="min-w-8 text-center"></span>
+                <span className="min-w-16 text-right"></span>
+                <span className="text-base text-[#D97736] font-black min-w-20 text-right">{(currentTotal).toLocaleString('id-ID')}</span>
               </div>
             </div>
 
@@ -893,20 +861,8 @@ export default function CheckoutPage({
               </div>
             </div>
 
-            {/* Payment proof image (rendered inside the receipt card if exists, for admin reference) */}
-            {activePaymentMethod !== 'cash' && paymentProofPreview && (
-              <div className="space-y-2 border-t border-dashed border-slate-200 pt-4 text-xs">
-                <h4 className="font-bold text-[#4A3222]/60 uppercase tracking-wider text-[10px] text-center">Lampiran Bukti Bayar</h4>
-                <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 aspect-video max-h-36 flex items-center justify-center">
-                  <img
-                    id="receipt-uploaded-proof"
-                    src={paymentProofPreview}
-                    alt="Bukti Bayar Terlampir"
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-              </div>
-            )}
+            {/* Payment proof image removed from the receipt layout to prevent html2canvas crashes.
+                The uploaded file is still saved to localStorage/database for admin reference. */}
           </div>
 
           {/* Action Buttons (Bottom) - styled matches brown/white design */}
