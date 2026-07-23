@@ -273,13 +273,14 @@ export default function Dashboard() {
   }
 
   return (
-    <>
-      <div className="fixed inset-0 bg-slate-50 z-[-2]" />
+    <div className="relative w-full min-h-screen bg-[#FDF6F0]">
+      {/* Background Batik - Fixed in background */}
       <div 
-        className="fixed inset-0 z-[-1] pointer-events-none opacity-[0.35]" 
+        className="absolute inset-0 pointer-events-none opacity-[0.35]" 
         style={{ backgroundImage: "url('/batik.jpeg')", backgroundRepeat: 'repeat', backgroundSize: '400px' }}
       />
-      <div className="min-h-screen text-slate-800 flex flex-col font-sans pb-24 w-full relative z-10 bg-transparent">
+      {/* Content wrapper */}
+      <div className="relative z-10 flex flex-col font-sans pb-24 text-[#4A3222]">
       {/* Toast Notification */}
       {notification && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] bg-[#E67E22] text-white px-5 py-2.5 rounded-full shadow-xl text-sm font-semibold flex items-center gap-2 animate-[bounce_1s_ease-in-out_infinite]">
@@ -365,7 +366,12 @@ export default function Dashboard() {
       </div>
 
       {/* 5. Bottom Checkout (Full Width Bar) */}
+      <BottomCheckout
+        cartItems={cartItemList}
+        onCheckout={handleGoToCheckout}
+        onClearCart={handleClearCart}
+      />
       </div>
-    </>
+    </div>
   );
 }

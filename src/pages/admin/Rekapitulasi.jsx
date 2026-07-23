@@ -117,7 +117,14 @@ export default function Rekapitulasi() {
   };
 
   return (
-    <div className="p-4 sm:p-8 bg-gray-50 min-h-screen font-['Plus_Jakarta_Sans']">
+    <div className="relative w-full min-h-screen bg-[#FDF6F0]">
+      {/* Latar Belakang Batik - Opacity 35% */}
+      <div 
+        className="absolute inset-0 pointer-events-none opacity-[0.35]" 
+        style={{ backgroundImage: "url('/batik.jpeg')", backgroundRepeat: 'repeat', backgroundSize: '400px' }}
+      />
+      {/* Container Konten Utama */}
+      <div className="relative z-10 flex flex-col font-sans pb-24 text-[#4A3222] p-4 sm:p-8">
       
       {/* Header Banner */}
       <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -239,6 +246,7 @@ export default function Rekapitulasi() {
         </button>
       </div>
 
+    </div>
     </div>
   );
 }
