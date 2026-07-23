@@ -1,14 +1,6 @@
-import React from 'react';
-import { products } from '../data/products';
-
+ 
 export default function RekapPage({ onBackToDashboard }) {
-  const formatRupiah = (number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      maximumFractionDigits: 0
-    }).format(number);
-  };
+  
 
   return (
     <div className="min-h-screen bg-white p-4 sm:p-8 text-[#4A3222]/80 font-sans">
@@ -35,30 +27,13 @@ export default function RekapPage({ onBackToDashboard }) {
             </span>
           </div>
 
-          {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-[#FFCBA4] text-[#4A3222]/90 font-black border-b border-[#FFCBA4]">
-                  <th className="p-3 rounded-tl-xl">No</th>
-                  <th className="p-3">Nama Barang</th>
-                  <th className="p-3">Kategori</th>
-                  <th className="p-3 text-right rounded-tr-xl">Harga (Rp)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#FFCBA4]/50 bg-white">
-                {products.map((p, idx) => (
-                  <tr key={p.id} className="hover:bg-[#FFFBF7] transition-colors">
-                    <td className="p-3 font-bold text-[#4A3222]/60">{idx + 1}</td>
-                    <td className="p-3 font-extrabold text-[#4A3222]/90">{p.nama}</td>
-                    <td className="p-3 text-[#4A3222]/80">{p.kategori}</td>
-                    <td className="p-3 text-right font-black text-[#4A3222]/90">
-                      {formatRupiah(p.harga)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {/* Placeholder: data will be provided by Supabase integration */}
+          <div className="p-8 text-center bg-[#FFFBF7] rounded-xl border border-[#FFCBA4]/60">
+            <p className="font-bold text-sm text-[#4A3222]/90">Daftar rekap barang tidak ditampilkan di sini.</p>
+            <p className="text-xs text-[#4A3222]/70 mt-2">
+              Data rekap akan diisi dan dikelola oleh tim melalui integrasi Supabase.
+            </p>
+            <p className="text-xs text-[#4A3222]/60 mt-3">Silakan hubungi pengembang yang bertanggung jawab untuk menambahkan dan mengelola data.</p>
           </div>
         </div>
       </div>

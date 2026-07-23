@@ -1,4 +1,4 @@
-import React from 'react';
+ 
 import bpsLogo from '../assets/bps-logo.svg';
 
 export default function Navbar({ role = "Guest", onToggleSidebar, onLoginClick }) {

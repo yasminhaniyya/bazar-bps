@@ -1,6 +1,9 @@
-import React from 'react';
+import { useState } from 'react';
+import AddProductModal from './AddProductModal';
 
-export default function Banner() {
+export default function Banner({ isAdmin = false, onAddProduct }) {
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
     <div className="bg-[#FFCBA4]/75 text-[#3c2a1e] rounded-lg p-6 border border-[#F8C993] shadow-xs flex flex-col sm:flex-row items-center justify-between gap-6">
       {/* Text Content */}
@@ -16,6 +19,23 @@ export default function Banner() {
         </p>
       </div>
 
+      {/* Admin action */}
+      {isAdmin && (
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsOpen(true)}
+            className="px-4 py-1.5 bg-[#D96A12] hover:bg-[#C95b0f] text-white font-semibold rounded-full shadow-sm"
+          >
+            + Tambah Barang
+          </button>
+        </div>
+      )}
+
+      <AddProductModal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        onSubmit={(data) => onAddProduct?.(data)}
+      />
     </div>
   );
 }

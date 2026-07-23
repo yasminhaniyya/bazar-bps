@@ -1,4 +1,4 @@
-import React from 'react';
+ 
 
 export default function CheckoutPage({ cartItems = [], onBackToDashboard }) {
   const totalPrice = cartItems.reduce((acc, item) => acc + (item.harga * item.quantity), 0);

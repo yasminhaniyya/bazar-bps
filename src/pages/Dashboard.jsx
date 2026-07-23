@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 import Banner from '../components/Banner';
@@ -8,6 +8,7 @@ import BottomCheckout from '../components/BottomCheckout';
 import CheckoutPage from './CheckoutPage';
 import RekapPage from './RekapPage';
 import { products as initialProducts, categories } from '../data/products';
+import LoginModal from '../components/LoginModal';
 
 export default function Dashboard() {
   const [role, setRole] = useState("Guest");
@@ -15,17 +16,27 @@ export default function Dashboard() {
   const [activeCategory, setActiveCategory] = useState("Semua");
   const [searchQuery, setSearchQuery] = useState("");
   const [cart, setCart] = useState({});
+  const [products, setProducts] = useState(initialProducts);
+  const [loginOpen, setLoginOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Toggle login role (Guest <-> Admin)
-  const handleLoginToggle = () => {
+  // Open login modal (Guest) or logout (Admin)
+  const handleLoginClick = () => {
     if (role === "Guest") {
-      setRole("Admin");
+      setLoginOpen(true);
     } else {
       setRole("Guest");
       if (currentView === "Rekap Barang") {
         setCurrentView("Home");
       }
+    }
+  };
+
+  const handleLoginSubmit = ({ email, password }) => {
+    // Placeholder: accept any non-empty credentials and set Admin locally.
+    if (email && password) {
+      setRole('Admin');
+      setLoginOpen(false);
     }
   };
 
@@ -67,12 +78,26 @@ export default function Dashboard() {
 
   // Filter products by search query and category
   const filteredProducts = useMemo(() => {
-    return initialProducts.filter((p) => {
+    return products.filter((p) => {
       const matchesCategory = activeCategory === "Semua" || p.kategori === activeCategory;
       const matchesSearch = p.nama.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesCategory && matchesSearch;
     });
-  }, [activeCategory, searchQuery]);
+  }, [products, activeCategory, searchQuery]);
+
+  const handleAddProductSubmit = (data) => {
+    const newProduct = {
+      id: Date.now(),
+      nama: data.nama || 'Produk Baru',
+      harga: Number(data.harga) || 0,
+      kategori: 'UMKM',
+      gambar: data.gambarPreview || '' ,
+      stok: Number(data.stock) || 0
+    };
+    setProducts((prev) => [newProduct, ...prev]);
+    console.log('New product (local):', newProduct);
+    alert('Produk ditambahkan secara lokal. Integrasikan Supabase untuk menyimpan permanen.');
+  };
 
   const cartItemList = Object.values(cart);
 
@@ -101,8 +126,9 @@ export default function Dashboard() {
       <Navbar
         role={role}
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        onLoginClick={handleLoginToggle}
+        onLoginClick={handleLoginClick}
       />
+      <LoginModal isOpen={loginOpen} onClose={() => setLoginOpen(false)} onSubmit={handleLoginSubmit} />
 
       {/* Sidebar Drawer (Off-canvas, muncul saat tombol ☰ ditekan) */}
       <Sidebar
@@ -117,7 +143,7 @@ export default function Dashboard() {
       <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6">
         <main className="w-full space-y-6">
           {/* 2. Banner */}
-          <Banner />
+          <Banner isAdmin={role === 'Admin'} onAddProduct={handleAddProductSubmit} />
 
           {/* 3. Search Bar */}
           <SearchBar

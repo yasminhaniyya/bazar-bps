@@ -1,4 +1,4 @@
-import React from 'react';
+ 
 
 export default function SearchBar({
   searchQuery = "",
@@ -43,7 +43,7 @@ export default function SearchBar({
               <button
                 key={idx}
                 onClick={() => onSelectCategory(cat)}
-                className={`px-3 py-1 rounded text-xs font-bold whitespace-nowrap transition-colors border ${
+                className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors border ${
                   isSelected
                     ? 'bg-[#FFCBA4] text-[#3c2a1e] border-[#F8C993]'
                     : 'bg-white text-[#3c2a1e]/70 border-[#FFCBA4]/60 hover:bg-[#FFCBA4]/30 hover:text-[#3c2a1e]'
