@@ -9,11 +9,11 @@ export default function Banner({ isAdmin = false, onAddProduct }) {
       {/* background image (low opacity) */}
       <div
         className="absolute inset-0 bg-center bg-cover"
-        style={{ backgroundImage: `url('/banner-pattern.png')`, opacity: 0.18 }}
+        style={{ backgroundImage: `url('/banner-pattern.png')`, opacity: 0.45 }}
         aria-hidden
       />
-      {/* soft color overlay to preserve accent */}
-      <div className="absolute inset-0 bg-[#FFCBA4]" style={{ opacity: 0.18 }} aria-hidden />
+      {/* soft color overlay to preserve accent (reduced for readability) */}
+      <div className="absolute inset-0 bg-[#FFCBA4]" style={{ opacity: 0.12 }} aria-hidden />
 
       <div className="relative p-6 text-[#3c2a1e] flex flex-col sm:flex-row items-center justify-between gap-6">
       {/* Text Content */}
