@@ -24,11 +24,7 @@ export default function ProductCard({
           className="w-full h-full object-cover"
           loading="lazy"
         />
-        <div className="absolute top-2 left-2">
-          <span className="px-2 py-0.5 bg-white/90 text-slate-700 rounded text-[10px] font-medium border border-slate-200 shadow-2xs">
-            {product.kategori}
-          </span>
-        </div>
+        {/* category badge removed per request */}
       </div>
 
       {/* Detail: Nama & Harga */}

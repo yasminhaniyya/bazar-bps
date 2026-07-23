@@ -3,21 +3,21 @@ export const products = [
     id: 1,
     nama: "SPIKOE RESEP KUNO standar kecil",
     harga: 120000,
-    kategori: "Kue & Roti",
+    kategori: "Oleh-Oleh",
     gambar: "https://tourism.surabaya.go.id/destination/9d92892a-f270-46c1-91bd-df2aac90bb83.jpg"
   },
   {
     id: 2,
     nama: "BLUDER COKRO isi 8 mix standar",
     harga: 135000,
-    kategori: "Kue & Roti",
+    kategori: "Oleh-Oleh",
     gambar: ""
    },
   {
     id: 3,
     nama: "WISATA RASA Almond Cheese (ORI/Coklat/Mocca/GreenTea)",
     harga: 65000,
-    kategori: "Oleh-Oleh",
+    kategori: "Kue & Roti",
     gambar: "https://images.unsplash.com/ph61363-fa8fdf82db35?auto=format&fit=crop&q=80&w=500"
   },
   {
@@ -26,19 +26,19 @@ export const products = [
     harga: 70000,
     kategori: "Kue & Roti",
     gambar: "https://images.unsplash.com/pho313564200-e75d5e30476c?auto=format&fit=crop&q=80&w=500"
-  },
+  },  
   {
     id: 5,
     nama: "WISATA RASA Kue Mente",
     harga: 42000,
-    kategori: "Oleh-Oleh",
+    kategori: "Kue & Roti",
     gambar: "https://images.unsplash.com/p0080875515-8a3a8dc5735e?auto=format&fit=crop&q=80&w=500"
   },
   {
     id: 6,
     nama: "WISATA RASA Kue Blinjo",
     harga: 35000,
-    kategori: "Oleh-Oleh",
+    kategori: "Kue & Roti",
     gambar: "https://images.unsplash.to-1558961363-fa8fdf82db35?auto=format&fit=crop&q=80&w=500"
   },
   {
@@ -85,4 +85,4 @@ export const products = [
   }
 ];
 
-export const categories = ["Semua", "Kue & Roti", "Oleh-Oleh", "Sambal & Lauk", "Camilan"];
+export const categories = ["Semua", "Kue & Roti", "Sambal & Lauk", "Camilan"];
