@@ -19,7 +19,7 @@ export default function Banner({ isAdmin = false, onAddProduct }) {
       {/* Text Content */}
       <div className="space-y-2 text-center sm:text-left">
         <h2 className="text-xl sm:text-2xl font-bold leading-tight text-[#3c2a1e]" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-          Bazar Rapat Teknis Nasional
+          Bazar Dharma Wanita Persatuan
         </h2>
         <p className="text-sm font-semibold text-[#3c2a1e]/85">
           BPS Provinsi Jawa Timur
