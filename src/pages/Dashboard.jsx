@@ -7,7 +7,6 @@ import ProductCard from '../components/ProductCard';
 import BottomCheckout from '../components/BottomCheckout';
 import RekapPage from './RekapPage';
 import CheckoutPage from './CheckoutPage';
-import { products as initialProducts, categories } from '../data/products';
 import LoginModal from '../components/LoginModal';
 import { supabase } from '../lib/supabase';
 
@@ -52,10 +51,15 @@ export default function Dashboard() {
       }
     }
   }, [currentView]);
-  const [products, setProducts] = useState(initialProducts);
+  const [products, setProducts] = useState([]);
   const [loginOpen, setLoginOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [notification, setNotification] = useState('');
+
+  const categoryOptions = useMemo(() => {
+    const unique = Array.from(new Set(products.map((item) => item.kategori).filter(Boolean)));
+    return ['Semua', ...unique];
+  }, [products]);
 
   useEffect(() => {
     if (notification) {
@@ -74,17 +78,16 @@ export default function Dashboard() {
 
         if (error) throw error;
 
-        if (data && data.length > 0) {
-          const dbProducts = data.map((p) => ({
-            id: p.id,
-            nama: p.name,
-            harga: p.price,
-            kategori: p.category,
-            gambar: p.image_url,
-            stok: p.stock
-          }));
-          setProducts([...dbProducts, ...initialProducts]);
-        }
+        const dbProducts = (data || []).map((p) => ({
+          id: p.id,
+          nama: p.name,
+          harga: p.price,
+          kategori: p.category,
+          gambar: p.image_url,
+          stok: p.stock
+        }));
+
+        setProducts(dbProducts);
       } catch (err) {
         console.error('Gagal memuat produk dari Supabase:', err);
       }
@@ -287,7 +290,7 @@ export default function Dashboard() {
           <SearchBar
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
-            categories={categories}
+            categories={categoryOptions}
             activeCategory={activeCategory}
             onSelectCategory={setActiveCategory}
           />
