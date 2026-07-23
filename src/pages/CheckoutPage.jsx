@@ -9,6 +9,16 @@ function toTitleCase(str) {
   });
 }
 
+function formatProvinceName(name) {
+  if (!name) return '';
+
+  const normalizedName = name
+    .replace(/Kepulauan Bangka Belitung/i, 'Bangka Belitung')
+    .trim();
+
+  return `BPS Provinsi ${toTitleCase(normalizedName)}`;
+}
+
 // Helper: Format number to Rupiah currency
 function formatRupiah(number) {
   return new Intl.NumberFormat('id-ID', {
@@ -21,40 +31,44 @@ function formatRupiah(number) {
 
 // Fallback Provinces (Offline support)
 const fallbackProvinces = [
-  { id: '11', name: 'Aceh' },
-  { id: '12', name: 'Sumatera Utara' },
-  { id: '13', name: 'Sumatera Barat' },
-  { id: '14', name: 'Riau' },
-  { id: '15', name: 'Jambi' },
-  { id: '16', name: 'Sumatera Selatan' },
-  { id: '17', name: 'Bengkulu' },
-  { id: '18', name: 'Lampung' },
-  { id: '19', name: 'Kepulauan Bangka Belitung' },
-  { id: '21', name: 'Kepulauan Riau' },
-  { id: '31', name: 'DKI Jakarta' },
-  { id: '32', name: 'Jawa Barat' },
-  { id: '33', name: 'Jawa Tengah' },
-  { id: '34', name: 'Daerah Istimewa Yogyakarta' },
-  { id: '35', name: 'Jawa Timur' },
-  { id: '36', name: 'Banten' },
-  { id: '51', name: 'Bali' },
-  { id: '52', name: 'Nusa Tenggara Barat' },
-  { id: '53', name: 'Nusa Tenggara Timur' },
-  { id: '61', name: 'Kalimantan Barat' },
-  { id: '62', name: 'Kalimantan Tengah' },
-  { id: '63', name: 'Kalimantan Selatan' },
-  { id: '64', name: 'Kalimantan Timur' },
-  { id: '65', name: 'Kalimantan Utara' },
-  { id: '71', name: 'Sulawesi Utara' },
-  { id: '72', name: 'Sulawesi Tengah' },
-  { id: '73', name: 'Sulawesi Selatan' },
-  { id: '74', name: 'Sulawesi Tenggara' },
-  { id: '75', name: 'Gorontalo' },
-  { id: '76', name: 'Sulawesi Barat' },
-  { id: '81', name: 'Maluku' },
-  { id: '82', name: 'Maluku Utara' },
-  { id: '91', name: 'Papua Barat' },
-  { id: '92', name: 'Papua' }
+  { id: '11', name: 'BPS Provinsi Aceh' },
+  { id: '12', name: 'BPS Provinsi Sumatera Utara' },
+  { id: '13', name: 'BPS Provinsi Sumatera Barat' },
+  { id: '14', name: 'BPS Provinsi Riau' },
+  { id: '15', name: 'BPS Provinsi Jambi' },
+  { id: '16', name: 'BPS Provinsi Sumatera Selatan' },
+  { id: '17', name: 'BPS Provinsi Bengkulu' },
+  { id: '18', name: 'BPS Provinsi Lampung' },
+  { id: '19', name: 'BPS Provinsi Bangka Belitung' },
+  { id: '21', name: 'BPS Provinsi Kepulauan Riau' },
+  { id: '31', name: 'BPS Provinsi DKI Jakarta' },
+  { id: '32', name: 'BPS Provinsi Jawa Barat' },
+  { id: '33', name: 'BPS Provinsi Jawa Tengah' },
+  { id: '34', name: 'BPS Provinsi Daerah Istimewa Yogyakarta' },
+  { id: '35', name: 'BPS Provinsi Jawa Timur' },
+  { id: '36', name: 'BPS Provinsi Banten' },
+  { id: '51', name: 'BPS Provinsi Bali' },
+  { id: '52', name: 'BPS Provinsi Nusa Tenggara Barat' },
+  { id: '53', name: 'BPS Provinsi Nusa Tenggara Timur' },
+  { id: '61', name: 'BPS Provinsi Kalimantan Barat' },
+  { id: '62', name: 'BPS Provinsi Kalimantan Tengah' },
+  { id: '63', name: 'BPS Provinsi Kalimantan Selatan' },
+  { id: '64', name: 'BPS Provinsi Kalimantan Timur' },
+  { id: '65', name: 'BPS Provinsi Kalimantan Utara' },
+  { id: '71', name: 'BPS Provinsi Sulawesi Utara' },
+  { id: '72', name: 'BPS Provinsi Sulawesi Tengah' },
+  { id: '73', name: 'BPS Provinsi Sulawesi Selatan' },
+  { id: '74', name: 'BPS Provinsi Sulawesi Tenggara' },
+  { id: '75', name: 'BPS Provinsi Gorontalo' },
+  { id: '76', name: 'BPS Provinsi Sulawesi Barat' },
+  { id: '81', name: 'BPS Provinsi Maluku' },
+  { id: '82', name: 'BPS Provinsi Maluku Utara' },
+  { id: '91', name: 'BPS Provinsi Papua Barat' },
+  { id: '92', name: 'BPS Provinsi Papua' },
+  { id: '93', name: 'BPS Provinsi Papua Tengah' },
+  { id: '94', name: 'BPS Provinsi Papua Pegunungan' },
+  { id: '95', name: 'BPS Provinsi Papua Selatan' },
+  { id: '96', name: 'BPS Provinsi Papua Barat Daya' }
 ];
 
 // Fallback Cities (Offline support)
@@ -219,6 +233,7 @@ export default function CheckoutPage({
   onClearCart
 }) {
   // Form State
+  const [panggilan, setPanggilan] = useState('');
   const [nama, setNama] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [selectedProvince, setSelectedProvince] = useState(null);
@@ -233,6 +248,7 @@ export default function CheckoutPage({
   const [cityQuery, setCityQuery] = useState('');
   const [showProvDropdown, setShowProvDropdown] = useState(false);
   const [showCityDropdown, setShowCityDropdown] = useState(false);
+  const [showPanggilanDropdown, setShowPanggilanDropdown] = useState(false);
   const [isRegionsLoading, setIsRegionsLoading] = useState(false);
 
   // Payment State
@@ -255,6 +271,7 @@ export default function CheckoutPage({
   // Refs for closing dropdowns on click outside
   const provRef = useRef(null);
   const cityRef = useRef(null);
+  const panggilanRef = useRef(null);
   const fileInputRef = useRef(null);
   const cityInputRef = useRef(null);
 
@@ -297,7 +314,7 @@ export default function CheckoutPage({
         const data = await response.json();
         const formatted = data.map(p => ({
           id: p.id,
-          name: toTitleCase(p.name)
+          name: formatProvinceName(p.name)
         })).sort((a, b) => a.name.localeCompare(b.name));
         setProvincesList(formatted);
       } catch (error) {
@@ -371,6 +388,7 @@ export default function CheckoutPage({
       try {
         const draft = JSON.parse(savedDraft);
         if (draft) {
+          if (draft.panggilan) setPanggilan(draft.panggilan);
           if (draft.nama) setNama(draft.nama);
           if (draft.whatsapp) setWhatsapp(draft.whatsapp);
           if (draft.hotel) setHotel(draft.hotel);
@@ -421,6 +439,7 @@ export default function CheckoutPage({
   // Save drafts on change
   useEffect(() => {
     const draft = {
+      panggilan,
       nama,
       whatsapp,
       hotel,
@@ -445,6 +464,9 @@ export default function CheckoutPage({
         }
         setShowCityDropdown(false);
       }
+      if (panggilanRef.current && !panggilanRef.current.contains(event.target)) {
+        setShowPanggilanDropdown(false);
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
@@ -459,6 +481,7 @@ export default function CheckoutPage({
       try {
         const profile = JSON.parse(savedProfile);
         if (profile) {
+          if (profile.panggilan) setPanggilan(profile.panggilan);
           if (profile.nama) setNama(profile.nama);
           if (profile.whatsapp) setWhatsapp(profile.whatsapp);
           if (profile.hotel) setHotel(profile.hotel);
@@ -566,6 +589,10 @@ export default function CheckoutPage({
 
   // Submit Order Action
   const handleSubmitOrder = () => {
+    if (!panggilan.trim()) {
+      showToast('Pilih panggilan Bapak atau Ibu!', 'error');
+      return;
+    }
     if (!nama.trim()) {
       showToast('Nama Lengkap wajib diisi!', 'error');
       return;
@@ -629,6 +656,7 @@ export default function CheckoutPage({
     setTimeout(() => {
       // Save profile
       const userProfile = {
+        panggilan,
         nama,
         whatsapp,
         province: selectedProvince,
@@ -687,6 +715,7 @@ export default function CheckoutPage({
   // Reset checkout for new order
   const handlePesanLagi = () => {
     // Reset States
+    setPanggilan('');
     setNama('');
     setWhatsapp('');
     setSelectedProvince(null);
@@ -968,6 +997,42 @@ export default function CheckoutPage({
             )}
 
             <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+              {/* Panggilan */}
+              <div className="space-y-1.5 relative" ref={panggilanRef}>
+                <label className="block text-xs font-bold text-[#4A3222]">Panggilan <span className="text-rose-500">*</span></label>
+                <div
+                  onClick={() => setShowPanggilanDropdown(true)}
+                  className="relative rounded-2xl border border-[#E5D3C0] bg-white focus-within:border-[#C19A6B] focus-within:ring-2 focus-within:ring-[#C19A6B]/15 transition-all flex items-center px-4 py-3 cursor-pointer"
+                >
+                  <svg className="w-4 h-4 text-[#4A3222] mr-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  <div className="w-full text-xs font-semibold text-[#4A3222] bg-transparent outline-none border-none placeholder-[#A1887F]/75 p-0">
+                    {panggilan || 'Pilih'}
+                  </div>
+                  <svg className={`w-4 h-4 text-[#4A3222] transition-transform ${showPanggilanDropdown ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+
+                {showPanggilanDropdown && (
+                  <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-40 bg-white border border-slate-200 rounded-2xl shadow-lg divide-y divide-slate-100 py-1">
+                    {['Bapak', 'Ibu'].map(option => (
+                      <div
+                        key={option}
+                        onClick={() => {
+                          setPanggilan(option);
+                          setShowPanggilanDropdown(false);
+                        }}
+                        className="px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-amber-50/70 hover:text-amber-900 cursor-pointer transition-colors"
+                      >
+                        {option}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {/* Nama Lengkap */}
               <div className="space-y-1.5">
                 <label className="block text-xs font-bold text-[#4A3222]">Nama Lengkap <span className="text-rose-500">*</span></label>
@@ -994,11 +1059,13 @@ export default function CheckoutPage({
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                   </svg>
                   <input
-                    type="tel"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     required
                     placeholder="Contoh: 081234567890"
                     value={whatsapp}
-                    onChange={(e) => setWhatsapp(e.target.value)}
+                    onChange={(e) => setWhatsapp(e.target.value.replace(/\D/g, ''))}
                     className="w-full text-xs font-semibold text-[#4A3222] bg-transparent outline-none border-none placeholder-[#A1887F]/75 p-0"
                   />
                 </div>
@@ -1073,7 +1140,7 @@ export default function CheckoutPage({
 
                 {/* City Combobox */}
                 <div className="space-y-1.5 relative" ref={cityRef}>
-                  <label className="block text-xs font-bold text-[#4A3222]">Kota / Kabupaten <span className="text-rose-500">*</span></label>
+                  <label className="block text-xs font-bold text-[#4A3222]">Kota <span className="text-rose-500">*</span></label>
                   <div
                     onClick={() => selectedProvince && setShowCityDropdown(true)}
                     className={`relative rounded-2xl border border-[#E5D3C0] bg-white focus-within:border-[#C19A6B] focus-within:ring-2 focus-within:ring-[#C19A6B]/15 transition-all flex items-center px-4 py-3 cursor-pointer ${!selectedProvince ? 'opacity-60 cursor-not-allowed' : ''}`}
