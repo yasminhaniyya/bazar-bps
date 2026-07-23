@@ -5,7 +5,8 @@ export default function Sidebar({
   isOpen = false,
   onClose,
   activeTab = "Home",
-  onSelectTab
+  onSelectTab,
+  onLogout
 }) {
   return (
     <>
@@ -83,10 +84,21 @@ export default function Sidebar({
           </div>
         </div>
 
-        {/* Footer info */}
-        <div className="pt-3 border-t border-[#FFCBA4]/60 text-xs text-[#3c2a1e]">
-          <p className="font-semibold">BPS Provinsi Jawa Timur</p>
-          <p className="text-[11px] text-[#3c2a1e]/60 mt-0.5">Dharma Wanita Persatuan</p>
+        {/* Footer info + logout (admin) */}
+        <div className="pt-3 border-t border-[#FFCBA4]/60">
+          <div className="text-xs text-[#3c2a1e]">
+            <p className="font-semibold">BPS Provinsi Jawa Timur</p>
+            <p className="text-[11px] text-[#3c2a1e]/60 mt-0.5">Dharma Wanita Persatuan</p>
+          </div>
+
+          {role === 'Admin' && (
+            <button
+              onClick={() => onLogout?.()}
+              className="mt-3 w-full px-3 py-2 bg-[#FFCBA4] hover:bg-[#F8C993] text-[#3c2a1e] font-bold rounded transition-colors"
+            >
+              Logout Admin
+            </button>
+          )}
         </div>
       </aside>
     </>

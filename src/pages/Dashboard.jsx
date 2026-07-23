@@ -20,6 +20,12 @@ export default function Dashboard() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  const handleLogout = () => {
+    setRole('Guest');
+    setIsSidebarOpen(false);
+    if (currentView === 'Rekap Barang') setCurrentView('Home');
+  };
+
   // Open login modal (Guest) or logout (Admin)
   const handleLoginClick = () => {
     if (role === "Guest") {
@@ -137,6 +143,7 @@ export default function Dashboard() {
         onClose={() => setIsSidebarOpen(false)}
         activeTab={currentView}
         onSelectTab={setCurrentView}
+        onLogout={handleLogout}
       />
 
       {/* Main Full-Width Content Container */}

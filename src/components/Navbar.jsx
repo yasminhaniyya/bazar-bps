@@ -35,22 +35,24 @@ export default function Navbar({ role = "Guest", onToggleSidebar, onLoginClick }
           </div>
         </div>
 
-        {/* Right: Login Button */}
+        {/* Right: Login Button (hidden when Admin because logout is in sidebar) */}
         <div className="flex items-center gap-3">
           {role === "Admin" && (
             <span className="text-xs font-semibold px-2.5 py-1 rounded bg-[#FFCBA4]/40 text-[#3c2a1e] border border-[#FFCBA4]">
               Mode Admin
             </span>
           )}
-          <button
-            onClick={onLoginClick}
-            className="px-3.5 py-1.5 bg-[#FFCBA4] hover:bg-[#F8C993] text-[#3c2a1e] text-xs font-bold rounded transition-colors border border-[#F8C993] flex items-center gap-1.5"
-          >
-            <svg className="w-3.5 h-3.5 text-[#3c2a1e]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-            </svg>
-            <span>{role === "Admin" ? "Logout" : "Login"}</span>
-          </button>
+          {role !== "Admin" && (
+            <button
+              onClick={onLoginClick}
+              className="px-3.5 py-1.5 bg-[#FFCBA4] hover:bg-[#F8C993] text-[#3c2a1e] text-xs font-bold rounded transition-colors border border-[#F8C993] flex items-center gap-1.5"
+            >
+              <svg className="w-3.5 h-3.5 text-[#3c2a1e]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+              </svg>
+              <span>Login</span>
+            </button>
+          )}
         </div>
       </div>
     </header>

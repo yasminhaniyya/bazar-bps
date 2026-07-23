@@ -4,12 +4,7 @@ export default function LoginModal({ isOpen, onClose, onSubmit }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  useEffect(() => {
-    if (!isOpen) {
-      setEmail('');
-      setPassword('');
-    }
-  }, [isOpen]);
+  
 
   useEffect(() => {
     if (!isOpen) return undefined;
