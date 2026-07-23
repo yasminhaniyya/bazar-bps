@@ -95,8 +95,8 @@ export default function Dashboard() {
       id: Date.now(),
       nama: data.nama || 'Produk Baru',
       harga: Number(data.harga) || 0,
-      kategori: 'UMKM',
-      gambar: data.gambarPreview || '' ,
+      kategori: data.kategori || 'Keripik',
+      gambar: data.gambarPreview || '',
       stok: Number(data.stock) || 0
     };
     setProducts((prev) => [newProduct, ...prev]);

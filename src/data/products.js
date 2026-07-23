@@ -80,9 +80,9 @@ export const products = [
     id: 12,
     nama: "PEYEK UENAK TENAN (BESAR)",
     harga: 40000,
-    kategori: "Camilan",
+    kategori: "Keripik",
     gambar: "https://images.unsplash.com/pho9037-eec170784d0b?auto=format&fit=crop&q=80&w=500"
   }
 ];
 
-export const categories = ["Semua", "Kue & Roti", "Sambal & Lauk", "Camilan"];
+export const categories = ["Semua", "Kue & Roti", "Sambal & Lauk", "Keripik"];

@@ -1,10 +1,13 @@
 import { useState, useMemo, useEffect } from 'react';
+import { categories as categoryOptions } from '../data/products';
 
 export default function AddProductModal({ isOpen, onClose, onSubmit }) {
+  const validCategories = categoryOptions.filter((cat) => cat !== 'Semua');
   const [nama, setNama] = useState('');
   const [harga, setHarga] = useState('');
   const [isHargaFocused, setIsHargaFocused] = useState(false);
   const [stock, setStock] = useState('');
+  const [kategori, setKategori] = useState(validCategories[0] || 'Keripik');
   const [gambarFile, setGambarFile] = useState(null);
 
   const preview = useMemo(() => {
@@ -39,6 +42,7 @@ export default function AddProductModal({ isOpen, onClose, onSubmit }) {
     const payload = {
       nama: nama.trim(),
       harga: Number(harga) || 0,
+      kategori,
       stock: Number(stock) || 0,
       gambarFile,
       gambarPreview: preview
@@ -82,6 +86,17 @@ export default function AddProductModal({ isOpen, onClose, onSubmit }) {
 
         <label className="block text-xs text-slate-600">Nama Barang</label>
         <input required value={nama} onChange={(e) => setNama(e.target.value)} className="w-full mb-2 px-2 py-1 border rounded text-sm" />
+
+        <label className="block text-xs text-slate-600">Kategori</label>
+        <select
+          value={kategori}
+          onChange={(e) => setKategori(e.target.value)}
+          className="w-full mb-2 px-2 py-1 border rounded text-sm"
+        >
+          {validCategories.map((cat) => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </select>
 
         <label className="block text-xs text-slate-600">Harga Jual (IDR)</label>
         <input
