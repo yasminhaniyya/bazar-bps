@@ -693,6 +693,16 @@ export default function CheckoutPage({
         throw new Error('Gagal menyimpan daftar barang pesanan.');
       }
 
+      // Potong stok produk
+      for (const item of cartItems) {
+        if (item.stok !== undefined && item.stok >= item.quantity) {
+          await supabase
+            .from('products')
+            .update({ stock: item.stok - item.quantity })
+            .eq('id', item.id);
+        }
+      }
+
       // Save profile locally for autofill convenience
       const userProfile = {
         nama,
