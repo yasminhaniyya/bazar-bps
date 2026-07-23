@@ -56,7 +56,24 @@ export default function AddProductModal({ isOpen, onClose, onSubmit }) {
         <h3 className="text-sm font-bold text-slate-800 mb-3">Tambah Barang</h3>
 
         <label className="block text-xs text-slate-600">Foto</label>
-        <input type="file" accept="image/*" onChange={handleFileChange} className="w-full mb-2" />
+        <div className="mb-2">
+          <input
+            id="gambar-file"
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            className="hidden"
+          />
+          <label
+            htmlFor="gambar-file"
+            className="inline-flex items-center justify-center px-4 py-2 bg-[#E67E22] hover:bg-[#D96A12] text-white rounded cursor-pointer text-sm font-semibold"
+          >
+            Tambah Gambar
+          </label>
+          {gambarFile && (
+            <span className="ml-3 text-xs text-slate-500">{gambarFile.name}</span>
+          )}
+        </div>
         {preview && (
           <div className="mb-2">
             <img src={preview} alt="preview" className="w-32 h-20 object-cover rounded" />

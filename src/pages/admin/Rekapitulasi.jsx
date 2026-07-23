@@ -21,117 +21,102 @@ export default function Rekapitulasi() {
   // State Summary (Card di atas)
   const [summary, setSummary] = useState({ totalTx: 0, totalRevenue: 0, totalProducts: 0 });
 
-  /**
-   * Fungsi untuk mengambil data pesanan ber-halaman (paginated)
-   */
-  const fetchData = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      // 1. Query Join order_items dengan orders dan products menggunakan inner join
-      let query = supabase
-        .from('order_items')
-        .select(`
-          id,
-          quantity,
-          price,
-          subtotal,
-          orders!inner (
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        // 1. Query Join order_items dengan orders dan products menggunakan inner join
+        let query = supabase
+          .from('order_items')
+          .select(`
             id,
-            ordered_at,
-            invoice_number,
-            buyer_name,
-            payment_method,
-            status,
-            total_price
-          ),
-          products!inner (
-            name
-          )
-        `);
+            quantity,
+            price,
+            subtotal,
+            orders!inner (
+              id,
+              ordered_at,
+              invoice_number,
+              buyer_name,
+              payment_method,
+              status,
+              total_price
+            ),
+            products!inner (
+              name
+            )
+          `);
 
-      // 2. Filter Status 
-      if (statusFilter !== 'All') {
-        query = query.eq('orders.status', statusFilter);
-      }
+        // 2. Filter Status 
+        if (statusFilter !== 'All') {
+          query = query.eq('orders.status', statusFilter);
+        }
 
-      // 3. Search (Pencarian Invoice, Nama Pembeli, atau Produk)
-      if (searchQuery) {
-        query = query.or(
-          `buyer_name.ilike.%${searchQuery}%,invoice_number.ilike.%${searchQuery}%`,
-          { referencedTable: 'orders' }
-        );
-        // Catatan: Jika query or pada 2 tabel berbeda error, kita sesuaikan karena Supabase JS 
-        // terkadang butuh syntax khusus. Di sini kita cari di level order_items atau lewat filter array manual
-        // Untuk amannya di V2, kita pakai ilike di referencedTable orders. 
-        // Supaya bisa mencari produk juga, kita perbarui logic-nya di bawah jika perlu.
-      }
-
-      // 4. Sorting
-      query = query.order('ordered_at', { referencedTable: 'orders', ascending: sortOrder === 'asc' });
-
-      // 5. Pagination
-      const from = (page - 1) * itemsPerPage;
-      const to = from + itemsPerPage - 1;
-      query = query.range(from, to);
-
-      const { data: resultData, error: dbError } = await query;
-
-      if (dbError) throw dbError;
-      
-      // Filter manual pencarian produk karena tidak semua versi postgrest mendukung OR lintas multiple FK
-      let finalData = resultData || [];
-      if (searchQuery) {
-          const lowerQuery = searchQuery.toLowerCase();
-          finalData = finalData.filter(item => 
-              item.products.name.toLowerCase().includes(lowerQuery) ||
-              item.orders.buyer_name.toLowerCase().includes(lowerQuery) ||
-              item.orders.invoice_number.toLowerCase().includes(lowerQuery)
+        // 3. Search (Pencarian Invoice, Nama Pembeli, atau Produk)
+        if (searchQuery) {
+          query = query.or(
+            `buyer_name.ilike.%${searchQuery}%,invoice_number.ilike.%${searchQuery}%`,
+            { referencedTable: 'orders' }
           );
-      }
+        }
 
-      setData(finalData);
-      
-      // Mengambil total rangkuman
-      fetchSummary();
+        // 4. Sorting
+        query = query.order('ordered_at', { referencedTable: 'orders', ascending: sortOrder === 'asc' });
 
-    } catch (err) {
-      console.error("Error fetching data:", err);
-      setError(err.message || 'Gagal memuat data');
-    } finally {
-      setLoading(false);
-    }
-  };
+        // 5. Pagination
+        const from = (page - 1) * itemsPerPage;
+        const to = from + itemsPerPage - 1;
+        query = query.range(from, to);
 
-  /**
-   * Fungsi khusus mengambil total rekapan tanpa pagination
-   */
-  const fetchSummary = async () => {
-     let query = supabase.from('order_items').select('quantity, subtotal, orders!inner(id, status)');
-     if (statusFilter !== 'All') query = query.eq('orders.status', statusFilter);
-     
-     const { data: sumData, error } = await query;
-     if (sumData && !error) {
-        const uniqueOrders = new Set();
-        let revenue = 0;
-        let productsSold = 0;
+        const { data: resultData, error: dbError } = await query;
 
-        sumData.forEach(item => {
+        if (dbError) throw dbError;
+        
+        let finalData = resultData || [];
+        if (searchQuery) {
+            const lowerQuery = searchQuery.toLowerCase();
+            finalData = finalData.filter(item => 
+                item.products.name.toLowerCase().includes(lowerQuery) ||
+                item.orders.buyer_name.toLowerCase().includes(lowerQuery) ||
+                item.orders.invoice_number.toLowerCase().includes(lowerQuery)
+            );
+        }
+
+        setData(finalData);
+
+        // Summary fetch inline to avoid missing dependency warning
+        let summaryQuery = supabase.from('order_items').select('quantity, subtotal, orders!inner(id, status)');
+        if (statusFilter !== 'All') summaryQuery = summaryQuery.eq('orders.status', statusFilter);
+
+        const { data: sumData, error: sumError } = await summaryQuery;
+        if (sumData && !sumError) {
+          const uniqueOrders = new Set();
+          let revenue = 0;
+          let productsSold = 0;
+
+          sumData.forEach(item => {
             uniqueOrders.add(item.orders.id);
-            if(item.orders.status === 'Paid') revenue += item.subtotal; 
+            if (item.orders.status === 'Paid') revenue += item.subtotal;
             productsSold += item.quantity;
-        });
+          });
 
-        setSummary({
-            totalTx: uniqueOrders.size, 
+          setSummary({
+            totalTx: uniqueOrders.size,
             totalRevenue: revenue,
             totalProducts: productsSold
-        });
-     }
-  };
+          });
+        }
 
-  useEffect(() => {
-    fetchData();
+      } catch (err) {
+        console.error("Error fetching data:", err);
+        setError(err.message || 'Gagal memuat data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void fetchData();
   }, [page, statusFilter, sortOrder, searchQuery]);
 
   const handleLogout = () => {
