@@ -37,9 +37,9 @@ export default function Dashboard() {
     }
   };
 
-  const handleLoginSubmit = ({ email, password }) => {
+  const handleLoginSubmit = ({ username, password }) => {
     // Placeholder: accept any non-empty credentials and set Admin locally.
-    if (email && password) {
+    if (username && password) {
       setRole('Admin');
       setLoginOpen(false);
     }
