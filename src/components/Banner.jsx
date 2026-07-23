@@ -28,7 +28,7 @@ export default function Banner({ isAdmin = false, onAddProduct }) {
                     style={{ maxWidth: '6rem', marginRight: '1cm' }}
                   />
   
-                  <h3 className="text-sm sm:text-base md:text-lg lg:text-xl font-extrabold leading-tight text-[#3c2a1e] text-center whitespace-nowrap overflow-hidden" style={{ fontFamily: 'Montserrat, sans-serif', maxWidth: '28rem' }}>
+                  <h3 className="text-lg sm:text-base md:text-lg lg:text-xl font-extrabold leading-tight text-[#3c2a1e] text-center whitespace-nowrap overflow-hidden" style={{ fontFamily: 'Montserrat, sans-serif', maxWidth: '28rem' }}>
                     DWP BPS PROVINSI JAWA TIMUR
                   </h3>
               </div>
