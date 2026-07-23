@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import * as htmlToImage from 'html-to-image';
+import { supabase } from '../lib/supabase';
 
 // Helper: Convert string to Title Case
 function toTitleCase(str) {
@@ -588,7 +589,7 @@ export default function CheckoutPage({
   };
 
   // Submit Order Action
-  const handleSubmitOrder = () => {
+  const handleSubmitOrder = async () => {
     if (!panggilan.trim()) {
       showToast('Pilih panggilan Bapak atau Ibu!', 'error');
       return;
@@ -624,7 +625,7 @@ export default function CheckoutPage({
       return;
     }
 
-    if (activePaymentMethod !== 'cash' && !paymentProofPreview) {
+    if (activePaymentMethod !== 'cash' && !paymentProofFile) {
       showToast('Bukti Pembayaran wajib diunggah!', 'error');
       return;
     }
@@ -653,8 +654,83 @@ export default function CheckoutPage({
     const formattedTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     const formattedDateTime = `${formattedDate} ${formattedTime}`;
 
-    setTimeout(() => {
-      // Save profile
+    try {
+      let paymentProofUrl = null;
+
+      // Upload payment proof if not cash
+      if (activePaymentMethod !== 'cash' && paymentProofFile) {
+        const fileExt = paymentProofFile.name.split('.').pop();
+        const fileName = `${inv}-${Math.random()}.${fileExt}`;
+        const filePath = `${fileName}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('payment-proofs')
+          .upload(filePath, paymentProofFile);
+          
+        if (uploadError) {
+          throw new Error('Gagal mengunggah bukti pembayaran.');
+        }
+
+        // Get public URL
+        const { data: publicUrlData } = supabase.storage
+          .from('payment-proofs')
+          .getPublicUrl(filePath);
+          
+        paymentProofUrl = publicUrlData.publicUrl;
+      }
+
+      // Insert into orders table
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          invoice_number: inv,
+          buyer_name: nama,
+          phone: whatsapp,
+          province: selectedProvince,
+          city: selectedCity,
+          hotel: hotel,
+          room_number: kamar,
+          payment_method: activePaymentMethod === 'cash' ? 'Cash' : 'Transfer',
+          payment_proof: paymentProofUrl,
+          total_price: total
+        })
+        .select()
+        .single();
+
+      if (orderError) {
+        console.error("Order Insert Error:", orderError);
+        throw new Error('Gagal menyimpan data pesanan.');
+      }
+
+      // Insert into order_items table
+      const orderItemsToInsert = cartItems.map(item => ({
+        order_id: orderData.id,
+        product_id: item.id,
+        quantity: item.quantity,
+        price: item.harga,
+        subtotal: item.harga * item.quantity
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItemsToInsert);
+
+      if (itemsError) {
+        console.error("Order Items Insert Error:", itemsError);
+        throw new Error('Gagal menyimpan daftar barang pesanan.');
+      }
+
+      // Potong stok produk
+      for (const item of cartItems) {
+        if (item.stok !== undefined && item.stok >= item.quantity) {
+          await supabase
+            .from('products')
+            .update({ stock: item.stok - item.quantity })
+            .eq('id', item.id);
+        }
+      }
+
+      // Save profile locally for autofill convenience
       const userProfile = {
         panggilan,
         nama,
@@ -665,6 +741,8 @@ export default function CheckoutPage({
         kamar
       };
       sessionStorage.setItem('dwp_bps_user_profile', JSON.stringify(userProfile));
+      
+      // Update local states for Receipt UI
       sessionStorage.setItem('dwp_bps_active_invoice', inv);
       sessionStorage.setItem('dwp_bps_active_screen', 'receipt');
       sessionStorage.setItem('dwp_bps_order_time', formattedDateTime);
@@ -673,11 +751,20 @@ export default function CheckoutPage({
       setReceiptItems(cartItems);
       setInvoiceNo(inv);
       setOrderTime(formattedDateTime);
+      
+      // Clear Cart (assuming handleClearCart is passed or cart is managed here)
+      // Since cart is passed from Dashboard, we can clear it using an event or prop,
+      // but here we just clear the sessionStorage cart to sync with Dashboard.
+      sessionStorage.removeItem('dwp_bps_cart');
+      
       setShowReceipt(true);
-      setIsSubmitting(false);
-
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, 1000);
+
+    } catch (err) {
+      showToast(err.message || 'Terjadi kesalahan sistem.', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Receipt download as JPG
@@ -822,12 +909,6 @@ export default function CheckoutPage({
               <div className="flex justify-between items-center font-semibold">
                 <span className="text-slate-400 font-bold">Waktu Order:</span>
                 <span className="text-[#4A3222]">{orderTime}</span>
-              </div>
-
-              {/* Status Order */}
-              <div className="flex justify-between items-center font-semibold">
-                <span className="text-slate-400 font-bold">Status Order:</span>
-                <span className="text-[#4A3222]">Selesai</span>
               </div>
             </div>
 

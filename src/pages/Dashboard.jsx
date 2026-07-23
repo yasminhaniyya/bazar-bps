@@ -169,13 +169,25 @@ export default function Dashboard() {
 
   // Add item to cart
   const handleAddToCart = (product) => {
-    setCart((prev) => ({
-      ...prev,
-      [product.id]: {
-        ...product,
-        quantity: (prev[product.id]?.quantity || 0) + 1
+    let limitReached = false;
+    setCart((prev) => {
+      const currentQty = prev[product.id]?.quantity || 0;
+      if (product.stok !== undefined && currentQty >= product.stok) {
+        limitReached = true;
+        return prev;
       }
-    }));
+      return {
+        ...prev,
+        [product.id]: {
+          ...product,
+          quantity: currentQty + 1
+        }
+      };
+    });
+
+    if (limitReached) {
+      setNotification(`Maaf, stok ${product.nama} tidak mencukupi! Sisa: ${product.stok} pcs.`);
+    }
   };
 
   // Remove item from cart
@@ -229,15 +241,25 @@ export default function Dashboard() {
   // Render Checkout Page
   if (currentView === "Checkout") {
     return (
-      <CheckoutPage
-        cartItems={cartItemList}
-        onBackToDashboard={() => setCurrentView("Home")}
-        role={role}
-        setRole={setRole}
-        onAddToCart={handleAddToCart}
-        onRemoveFromCart={handleRemoveFromCart}
-        onClearCart={handleClearCart}
-      />
+      <>
+        {notification && (
+          <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] bg-[#E67E22] text-white px-5 py-2.5 rounded-full shadow-xl text-sm font-semibold flex items-center gap-2 animate-[bounce_1s_ease-in-out_infinite]">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            {notification}
+          </div>
+        )}
+        <CheckoutPage
+          cartItems={cartItemList}
+          onBackToDashboard={() => setCurrentView("Home")}
+          role={role}
+          setRole={setRole}
+          onAddToCart={handleAddToCart}
+          onRemoveFromCart={handleRemoveFromCart}
+          onClearCart={handleClearCart}
+        />
+      </>
     );
   }
 
