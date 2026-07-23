@@ -854,7 +854,13 @@ export default function CheckoutPage({
   // If receipt is active, render the receipt view
   if (showReceipt) {
     return (
-      <div className="min-h-screen bg-[#FDF6F0] flex flex-col font-sans items-center py-8 px-4 pb-24">
+      <>
+        <div className="fixed inset-0 bg-[#FDF6F0] z-[-2]" />
+        <div 
+          className="fixed inset-0 z-[-1] pointer-events-none opacity-[0.35]" 
+          style={{ backgroundImage: "url('/batik.jpeg')", backgroundRepeat: 'repeat', backgroundSize: '400px' }}
+        />
+        <div className="min-h-screen flex flex-col font-sans items-center py-8 px-4 pb-24 relative z-10 bg-transparent">
         {/* Toast Alert */}
         {toast.show && (
           <div className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 border text-sm font-medium transition-all ${
@@ -1001,12 +1007,19 @@ export default function CheckoutPage({
           </div>
         </div>
       </div>
+      </>
     );
   }
 
   // Form checkout view
   return (
-    <div className="min-h-screen bg-[#FDF6F0] text-[#4A3222] font-sans pb-28">
+    <>
+      <div className="fixed inset-0 bg-[#FDF6F0] z-[-2]" />
+      <div 
+        className="fixed inset-0 z-[-1] pointer-events-none opacity-[0.35]" 
+        style={{ backgroundImage: "url('/batik.jpeg')", backgroundRepeat: 'repeat', backgroundSize: '400px' }}
+      />
+      <div className="min-h-screen text-[#4A3222] font-sans pb-28 relative z-10 bg-transparent">
       {/* Toast Alert */}
       {toast.show && (
         <div className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 border text-sm font-medium transition-all ${
@@ -1639,6 +1652,7 @@ export default function CheckoutPage({
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

@@ -7,7 +7,7 @@ export default function Banner({ isAdmin = false, onAddProduct }) {
   return (
     <div className="relative rounded-lg overflow-hidden border border-[#F8C993] shadow-xs">
       {/* solid color overlay (45% opacity) to match Login Admin button */}
-      <div className="absolute inset-0 bg-[#FFCBA4]" style={{ opacity: 0.45 }} aria-hidden />
+      <div className="absolute inset-0 bg-[#FFCBA4]" style={{ opacity: 1 }} aria-hidden />
 
       <div className="relative p-6 text-[#3c2a1e] flex flex-col items-center gap-6">
         {/* Text Content */}

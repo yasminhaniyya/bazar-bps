@@ -105,7 +105,13 @@ export default function RekapPage({ onBackToDashboard }) {
   }, [page, sortOrder, searchQuery]);
 
   return (
-    <div className="min-h-screen bg-white p-4 sm:p-8 text-[#4A3222]/80 font-['Plus_Jakarta_Sans']">
+    <>
+      <div className="fixed inset-0 bg-white z-[-2]" />
+      <div 
+        className="fixed inset-0 z-[-1] pointer-events-none opacity-[0.35]" 
+        style={{ backgroundImage: "url('/batik.jpeg')", backgroundRepeat: 'repeat', backgroundSize: '400px' }}
+      />
+      <div className="min-h-screen p-4 sm:p-8 text-[#4A3222]/80 font-['Plus_Jakarta_Sans'] relative z-10 bg-transparent">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Back Button */}
         <button
@@ -237,6 +243,7 @@ export default function RekapPage({ onBackToDashboard }) {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
