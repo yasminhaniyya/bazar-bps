@@ -181,7 +181,6 @@ export default function RekapPage({ onBackToDashboard }) {
                 <option value="All">Semua Status</option>
                 <option value="Pending">Pending</option>
                 <option value="Paid">Paid</option>
-                <option value="Cancelled">Cancelled</option>
               </select>
 
               {/* Sort */}

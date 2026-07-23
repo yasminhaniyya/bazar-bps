@@ -45,44 +45,44 @@ export const products = [
     id: 7,
     nama: "SAMBAL BU RUDY: sambal bawang",
     harga: 32000,
-    kategori: "Sambal & Lauk",
+    kategori: "Sambal",
     gambar: "https://images..com/photo-1565557623262-b51c2513a641?auto=format&fit=crop&q=80&w=500"
   },
   {
     id: 8,
     nama: "SAMBAL BU RUDY: sambal terasi",
     harga: 35000,
-    kategori: "Sambal & Lauk",
+    kategori: "Sambal",
     gambar: "https://imaglash.com/photo-1652726-4a6b54c97e46?auto=format&fit=crop&q=80&w=500"
   },
   {
     id: 9,
     nama: "SAMBAL BU RUDY: SAMBEL IJO",
     harga: 35000,
-    kategori: "Sambal & Lauk",
+    kategori: "Sambal",
     gambar: "https://images.unsm/photo-158816c41db?auto=format&fit=crop&q=80&w=500"
   },
   {
     id: 10,
     nama: "SAMBAL BU RUDY: Udang Crispy Besar (115 gr)",
     harga: 80000,
-    kategori: "Sambal & Lauk",
+    kategori: "Sambal",
     gambar: "https://images.unsplash.com/ph80018434-b513d5e5fd47?auto=format&fit=crop&q=80&w=500"
   },
   {
     id: 11,
     nama: "SAMBAL BU RUDY: SAMBEL SACHET (bawang/trasi/ijo)",
     harga: 35000,
-    kategori: "Sambal & Lauk",
+    kategori: "Sambal",
     gambar: "https://images.unsplash.com/ph44741938-0af808871cc0?auto=format&fit=crop&q=80&w=500"
   },
   {
     id: 12,
     nama: "PEYEK UENAK TENAN (BESAR)",
     harga: 40000,
-    kategori: "Camilan",
+    kategori: "Keripik",
     gambar: "https://images.unsplash.com/pho9037-eec170784d0b?auto=format&fit=crop&q=80&w=500"
   }
 ];
 
-export const categories = ["Semua", "Kue & Roti", "Sambal & Lauk", "Camilan"];
+export const categories = ["Semua", "Kue & Roti", "Sambal", "Keripik"];
