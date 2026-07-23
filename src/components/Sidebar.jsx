@@ -1,5 +1,7 @@
  
 
+import bpsLogo from '../assets/bps-logo.svg';
+
 export default function Sidebar({
   role = "Guest",
   isOpen = false,
@@ -86,9 +88,12 @@ export default function Sidebar({
 
         {/* Footer info + logout (admin) */}
         <div className="pt-3 border-t border-[#FFCBA4]/60">
-          <div className="text-xs text-[#3c2a1e]">
-            <p className="font-semibold">BPS Provinsi Jawa Timur</p>
-            <p className="text-[11px] text-[#3c2a1e]/60 mt-0.5">Dharma Wanita Persatuan</p>
+          <div className="flex items-center gap-3">
+            <img src={bpsLogo} alt="Logo BPS" className="h-6 w-auto object-contain" />
+            <div className="text-xs text-[#3c2a1e]">
+              <p className="font-semibold">BPS Provinsi Jawa Timur</p>
+              <p className="text-[11px] text-[#3c2a1e]/60 mt-0.5">Dharma Wanita Persatuan</p>
+            </div>
           </div>
 
           {role === 'Admin' && (
