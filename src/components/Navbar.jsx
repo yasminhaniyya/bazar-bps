@@ -9,11 +9,11 @@ export default function Navbar({ role = "Guest", onToggleSidebar, onLoginClick }
         <div className="flex items-center gap-3">
           <button
             onClick={onToggleSidebar}
-            className="p-2 rounded-md text-[#3c2a1e] hover:bg-[#FFCBA4]/30 transition-colors focus:outline-none border border-[#FFCBA4]/60"
+            className="p-1.5 rounded-md text-[#3c2a1e] hover:bg-[#FFCBA4]/30 transition-colors focus:outline-none border border-[#FFCBA4]/60"
             aria-label="Tombol menu"
             title="Buka Menu Sidebar"
           >
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
@@ -22,10 +22,10 @@ export default function Navbar({ role = "Guest", onToggleSidebar, onLoginClick }
             <img
               src={bpsLogo}
               alt="Logo BPS"
-              className="h-8 w-auto object-contain"
+              className="h-7 w-auto object-contain"
             />
             <div className="border-l border-[#FFCBA4]/60 pl-3">
-              <h1 className="text-base font-bold text-[#3c2a1e] leading-tight">
+              <h1 className="text-[12px] sm:text-sm font-bold text-[#3c2a1e] leading-tight whitespace-nowrap">
                 Badan Pusat Statistik
               </h1>
               <p className="text-[11px] text-[#3c2a1e]/70 hidden sm:block">

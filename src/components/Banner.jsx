@@ -5,7 +5,17 @@ export default function Banner({ isAdmin = false, onAddProduct }) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="bg-[#FFCBA4]/75 text-[#3c2a1e] rounded-lg p-6 border border-[#F8C993] shadow-xs flex flex-col sm:flex-row items-center justify-between gap-6">
+    <div className="relative rounded-lg overflow-hidden border border-[#F8C993] shadow-xs">
+      {/* background image (low opacity) */}
+      <div
+        className="absolute inset-0 bg-center bg-cover"
+        style={{ backgroundImage: `url('/banner-pattern.png')`, opacity: 0.18 }}
+        aria-hidden
+      />
+      {/* soft color overlay to preserve accent */}
+      <div className="absolute inset-0 bg-[#FFCBA4]" style={{ opacity: 0.18 }} aria-hidden />
+
+      <div className="relative p-6 text-[#3c2a1e] flex flex-col sm:flex-row items-center justify-between gap-6">
       {/* Text Content */}
       <div className="space-y-2 text-center sm:text-left">
         <h2 className="text-xl sm:text-2xl font-bold leading-tight text-[#3c2a1e]" style={{ fontFamily: 'Montserrat, sans-serif' }}>
@@ -37,5 +47,6 @@ export default function Banner({ isAdmin = false, onAddProduct }) {
         onSubmit={(data) => onAddProduct?.(data)}
       />
     </div>
+  </div>
   );
 }
