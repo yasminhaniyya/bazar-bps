@@ -56,8 +56,9 @@ const fallbackProvinces = [
   { id: '92', name: 'Papua' }
 ];
 
-// Fallback Cities for Jawa Timur (Offline support)
+// Fallback Cities (Offline support)
 const fallbackCities = [
+  // Jawa Timur (35)
   { id: '3501', provinceId: '35', name: 'Kabupaten Pacitan' },
   { id: '3502', provinceId: '35', name: 'Kabupaten Ponorogo' },
   { id: '3503', provinceId: '35', name: 'Kabupaten Trenggalek' },
@@ -95,7 +96,88 @@ const fallbackCities = [
   { id: '3576', provinceId: '35', name: 'Kota Mojokerto' },
   { id: '3577', provinceId: '35', name: 'Kota Madiun' },
   { id: '3578', provinceId: '35', name: 'Kota Surabaya' },
-  { id: '3579', provinceId: '35', name: 'Kota Batu' }
+  { id: '3579', provinceId: '35', name: 'Kota Batu' },
+
+  // Jawa Tengah (33)
+  { id: '3301', provinceId: '33', name: 'Kabupaten Cilacap' },
+  { id: '3302', provinceId: '33', name: 'Kabupaten Banyumas' },
+  { id: '3303', provinceId: '33', name: 'Kabupaten Purbalingga' },
+  { id: '3304', provinceId: '33', name: 'Kabupaten Banjarnegara' },
+  { id: '3305', provinceId: '33', name: 'Kabupaten Kebumen' },
+  { id: '3306', provinceId: '33', name: 'Kabupaten Purworejo' },
+  { id: '3307', provinceId: '33', name: 'Kabupaten Wonosobo' },
+  { id: '3308', provinceId: '33', name: 'Kabupaten Magelang' },
+  { id: '3309', provinceId: '33', name: 'Kabupaten Boyolali' },
+  { id: '3310', provinceId: '33', name: 'Kabupaten Klaten' },
+  { id: '3311', provinceId: '33', name: 'Kabupaten Sukoharjo' },
+  { id: '3312', provinceId: '33', name: 'Kabupaten Wonogiri' },
+  { id: '3313', provinceId: '33', name: 'Kabupaten Karanganyar' },
+  { id: '3314', provinceId: '33', name: 'Kabupaten Sragen' },
+  { id: '3315', provinceId: '33', name: 'Kabupaten Grobogan' },
+  { id: '3316', provinceId: '33', name: 'Kabupaten Blora' },
+  { id: '3317', provinceId: '33', name: 'Kabupaten Rembang' },
+  { id: '3318', provinceId: '33', name: 'Kabupaten Pati' },
+  { id: '3319', provinceId: '33', name: 'Kabupaten Kudus' },
+  { id: '3320', provinceId: '33', name: 'Kabupaten Jepara' },
+  { id: '3321', provinceId: '33', name: 'Kabupaten Demak' },
+  { id: '3322', provinceId: '33', name: 'Kabupaten Semarang' },
+  { id: '3323', provinceId: '33', name: 'Kabupaten Temanggung' },
+  { id: '3324', provinceId: '33', name: 'Kabupaten Kendal' },
+  { id: '3325', provinceId: '33', name: 'Kabupaten Batang' },
+  { id: '3326', provinceId: '33', name: 'Kabupaten Pekalongan' },
+  { id: '3327', provinceId: '33', name: 'Kabupaten Pemalang' },
+  { id: '3328', provinceId: '33', name: 'Kabupaten Tegal' },
+  { id: '3329', provinceId: '33', name: 'Kabupaten Brebes' },
+  { id: '3371', provinceId: '33', name: 'Kota Magelang' },
+  { id: '3372', provinceId: '33', name: 'Kota Surakarta' },
+  { id: '3373', provinceId: '33', name: 'Kota Salatiga' },
+  { id: '3374', provinceId: '33', name: 'Kota Semarang' },
+  { id: '3375', provinceId: '33', name: 'Kota Pekalongan' },
+  { id: '3376', provinceId: '33', name: 'Kota Tegal' },
+
+  // Jawa Barat (32)
+  { id: '3201', provinceId: '32', name: 'Kabupaten Bogor' },
+  { id: '3202', provinceId: '32', name: 'Kabupaten Sukabumi' },
+  { id: '3203', provinceId: '32', name: 'Kabupaten Cianjur' },
+  { id: '3204', provinceId: '32', name: 'Kabupaten Bandung' },
+  { id: '3205', provinceId: '32', name: 'Kabupaten Garut' },
+  { id: '3206', provinceId: '32', name: 'Kabupaten Tasikmalaya' },
+  { id: '3207', provinceId: '32', name: 'Kabupaten Ciamis' },
+  { id: '3208', provinceId: '32', name: 'Kabupaten Kuningan' },
+  { id: '3209', provinceId: '32', name: 'Kabupaten Cirebon' },
+  { id: '3210', provinceId: '32', name: 'Kabupaten Majalengka' },
+  { id: '3211', provinceId: '32', name: 'Kabupaten Sumedang' },
+  { id: '3212', provinceId: '32', name: 'Kabupaten Indramayu' },
+  { id: '3213', provinceId: '32', name: 'Kabupaten Subang' },
+  { id: '3214', provinceId: '32', name: 'Kabupaten Purwakarta' },
+  { id: '3215', provinceId: '32', name: 'Kabupaten Karawang' },
+  { id: '3216', provinceId: '32', name: 'Kabupaten Bekasi' },
+  { id: '3217', provinceId: '32', name: 'Kabupaten Bandung Barat' },
+  { id: '3218', provinceId: '32', name: 'Kabupaten Pangandaran' },
+  { id: '3271', provinceId: '32', name: 'Kota Bogor' },
+  { id: '3272', provinceId: '32', name: 'Kota Sukabumi' },
+  { id: '3273', provinceId: '32', name: 'Kota Bandung' },
+  { id: '3274', provinceId: '32', name: 'Kota Cirebon' },
+  { id: '3275', provinceId: '32', name: 'Kota Bekasi' },
+  { id: '3276', provinceId: '32', name: 'Kota Depok' },
+  { id: '3277', provinceId: '32', name: 'Kota Cimahi' },
+  { id: '3278', provinceId: '32', name: 'Kota Tasikmalaya' },
+  { id: '3279', provinceId: '32', name: 'Kota Banjar' },
+
+  // DKI Jakarta (31)
+  { id: '3101', provinceId: '31', name: 'Kabupaten Kepulauan Seribu' },
+  { id: '3171', provinceId: '31', name: 'Kota Jakarta Selatan' },
+  { id: '3172', provinceId: '31', name: 'Kota Jakarta Timur' },
+  { id: '3173', provinceId: '31', name: 'Kota Jakarta Pusat' },
+  { id: '3174', provinceId: '31', name: 'Kota Jakarta Barat' },
+  { id: '3175', provinceId: '31', name: 'Kota Jakarta Utara' },
+
+  // DI Yogyakarta (34)
+  { id: '3401', provinceId: '34', name: 'Kabupaten Kulon Progo' },
+  { id: '3402', provinceId: '34', name: 'Kabupaten Bantul' },
+  { id: '3403', provinceId: '34', name: 'Kabupaten Gunungkidul' },
+  { id: '3404', provinceId: '34', name: 'Kabupaten Sleman' },
+  { id: '3471', provinceId: '34', name: 'Kota Yogyakarta' }
 ];
 
 export default function CheckoutPage({
@@ -145,6 +227,7 @@ export default function CheckoutPage({
   const provRef = useRef(null);
   const cityRef = useRef(null);
   const fileInputRef = useRef(null);
+  const cityInputRef = useRef(null);
 
   // Calculate pricing
   const subtotal = cartItems.reduce((acc, item) => acc + (item.harga * item.quantity), 0);
@@ -171,7 +254,16 @@ export default function CheckoutPage({
     const fetchProvinces = async () => {
       setIsRegionsLoading(true);
       try {
-        const response = await fetch('https://emsifa.github.io/api-wilayah-indonesia/api/provinces.json');
+        // Gunakan AbortController untuk timeout 3 detik agar tidak memblokir loading selamanya jika internet lambat
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
+        
+        // Menggunakan cdn.jsdelivr.net yang bebas CORS dan sangat cepat dibanding github.io langsung
+        const response = await fetch('https://cdn.jsdelivr.net/gh/emsifa/api-wilayah-indonesia@gh-pages/api/provinces.json', {
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        
         if (!response.ok) throw new Error('API Error');
         const data = await response.json();
         const formatted = data.map(p => ({
@@ -191,14 +283,24 @@ export default function CheckoutPage({
 
   // 2. Fetch Cities when Selected Province Changes
   useEffect(() => {
+    // Reset list kota agar tidak menampilkan data lama saat loading
+    setCitiesList([]);
+    
     if (!selectedProvince) {
-      setCitiesList([]);
       return;
     }
     const fetchCities = async () => {
       setIsRegionsLoading(true);
       try {
-        const response = await fetch(`https://emsifa.github.io/api-wilayah-indonesia/api/regencies/${selectedProvince.id}.json`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
+        
+        // Menggunakan cdn.jsdelivr.net yang bebas CORS dan sangat cepat dibanding github.io langsung
+        const response = await fetch(`https://cdn.jsdelivr.net/gh/emsifa/api-wilayah-indonesia@gh-pages/api/regencies/${selectedProvince.id}.json`, {
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        
         if (!response.ok) throw new Error('API Error');
         const data = await response.json();
         const formatted = data.map(c => ({
@@ -209,10 +311,8 @@ export default function CheckoutPage({
         setCitiesList(formatted);
       } catch (error) {
         console.warn("Gagal memuat API kota, menggunakan data offline:", error);
-        let fallback = [];
-        if (selectedProvince.id === '35') {
-          fallback = [...fallbackCities].sort((a, b) => a.name.localeCompare(b.name));
-        }
+        const fallback = fallbackCities.filter(c => c.provinceId === selectedProvince.id)
+                                      .sort((a, b) => a.name.localeCompare(b.name));
         setCitiesList(fallback);
       } finally {
         setIsRegionsLoading(false);
@@ -310,6 +410,10 @@ export default function CheckoutPage({
         setShowProvDropdown(false);
       }
       if (cityRef.current && !cityRef.current.contains(event.target)) {
+        // Jangan tutup dropdown kota jika pengguna sedang mengklik dropdown provinsi
+        if (provRef.current && provRef.current.contains(event.target)) {
+          return;
+        }
         setShowCityDropdown(false);
       }
     }
@@ -356,8 +460,19 @@ export default function CheckoutPage({
     setSelectedCity(null);
     setCityQuery('');
     
+    // Bersihkan list kota dan set loading secara instan agar langsung muncul indikator "Memuat..."
+    setCitiesList([]);
+    setIsRegionsLoading(true);
+    
     // Automatically open City dropdown list
     setShowCityDropdown(true);
+
+    // Auto-focus input kota agar keyboard langsung muncul & list kota ter-render
+    setTimeout(() => {
+      if (cityInputRef.current) {
+        cityInputRef.current.focus();
+      }
+    }, 100);
   };
 
   // Dropdown City Select
@@ -523,14 +638,31 @@ export default function CheckoutPage({
       };
       html2canvasLib(receiptElement, options).then(canvas => {
         try {
-          const imgData = canvas.toDataURL('image/jpeg', 0.9);
-          const link = document.createElement('a');
-          link.download = `Receipt-${invoiceNo}.jpg`;
-          link.href = imgData;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          showToast('Struk berhasil diunduh!', 'success');
+          canvas.toBlob((blob) => {
+            if (!blob) {
+              showToast('Gagal membuat gambar struk.', 'error');
+              return;
+            }
+            const blobUrl = URL.createObjectURL(blob);
+            
+            // Buat link download
+            const link = document.createElement('a');
+            link.download = `Receipt-${invoiceNo}.jpg`;
+            link.href = blobUrl;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Buka hasil unduhan langsung di tab baru
+            window.open(blobUrl, '_blank');
+            
+            showToast('Struk berhasil diunduh!', 'success');
+            
+            // Bersihkan memori blob setelah 1 menit
+            setTimeout(() => {
+              URL.revokeObjectURL(blobUrl);
+            }, 60000);
+          }, 'image/jpeg', 0.95);
         } catch (err) {
           console.error('Gagal membuat JPG receipt', err);
           showToast('Gagal mengunduh gambar struk. Coba browser lain.', 'error');
@@ -554,9 +686,9 @@ export default function CheckoutPage({
         document.body.appendChild(script);
       };
 
-      // Try loading from jsdelivr first, fallback to unpkg
+      // Gunakan standard html2canvas v1.4.1 yang stabil dan dijamin mengekspos window.html2canvas
       loadScript(
-        'https://cdn.jsdelivr.net/npm/html2canvas-pro@1.5.8/dist/html2canvas.min.js',
+        'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js',
         () => {
           if (window.html2canvas) {
             runDownload(window.html2canvas);
@@ -565,10 +697,10 @@ export default function CheckoutPage({
           }
         },
         () => {
-          // Fallback to unpkg CDN
+          // Fallback ke unpkg CDN
           showToast('Mencoba server cadangan...', 'success');
           loadScript(
-            'https://unpkg.com/html2canvas-pro@1.5.8/dist/html2canvas.min.js',
+            'https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.js',
             () => {
               if (window.html2canvas) {
                 runDownload(window.html2canvas);
@@ -941,6 +1073,19 @@ export default function CheckoutPage({
                         setCityQuery('');
                         setShowProvDropdown(true);
                       }}
+                      onBlur={() => {
+                        setTimeout(() => {
+                          const match = provincesList.find(p => p.name.toLowerCase() === provQuery.toLowerCase());
+                          if (match) {
+                            handleSelectProvince(match);
+                          } else {
+                            const filtered = provincesList.filter(p => p.name.toLowerCase().includes(provQuery.toLowerCase()));
+                            if (filtered.length === 1) {
+                              handleSelectProvince(filtered[0]);
+                            }
+                          }
+                        }, 250);
+                      }}
                       className="w-full text-xs font-semibold text-[#4A3222] bg-transparent outline-none border-none placeholder-[#A1887F]/75 p-0 cursor-text"
                     />
                     <svg className={`w-4 h-4 text-[#4A3222] transition-transform ${showProvDropdown ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -982,6 +1127,7 @@ export default function CheckoutPage({
                     </svg>
                     <input
                       type="text"
+                      ref={cityInputRef}
                       disabled={!selectedProvince}
                       placeholder={selectedProvince ? "Cari Kota/Kabupaten..." : "Pilih Provinsi dahulu..."}
                       value={cityQuery}
@@ -989,6 +1135,19 @@ export default function CheckoutPage({
                         setCityQuery(e.target.value);
                         setSelectedCity(null);
                         setShowCityDropdown(true);
+                      }}
+                      onBlur={() => {
+                        setTimeout(() => {
+                          const match = citiesList.find(c => c.name.toLowerCase() === cityQuery.toLowerCase());
+                          if (match) {
+                            handleSelectCity(match);
+                          } else {
+                            const filtered = citiesList.filter(c => c.name.toLowerCase().includes(cityQuery.toLowerCase()));
+                            if (filtered.length === 1) {
+                              handleSelectCity(filtered[0]);
+                            }
+                          }
+                        }, 250);
                       }}
                       className="w-full text-xs font-semibold text-[#4A3222] bg-transparent outline-none border-none placeholder-[#A1887F]/75 p-0 disabled:cursor-not-allowed cursor-text"
                     />
@@ -1019,6 +1178,10 @@ export default function CheckoutPage({
 
                       {isRegionsLoading && citiesList.length === 0 ? (
                         <div className="px-4 py-3 text-xs text-slate-400 font-semibold text-center italic">Memuat Kota/Kabupaten...</div>
+                      ) : citiesList.length === 0 ? (
+                        <div className="px-4 py-3.5 text-xs text-amber-700 font-semibold text-center italic bg-amber-50/60 leading-normal">
+                          ⚠️ Gagal mengambil data otomatis. Silakan ketik nama kota/kabupaten Anda secara manual di atas, lalu klik tombol "Gunakan" yang muncul.
+                        </div>
                       ) : filteredCities.length === 0 && cityQuery.trim().length === 0 ? (
                         <div className="px-4 py-3 text-xs text-slate-400 font-semibold text-center italic">Ketik untuk mencari kota...</div>
                       ) : filteredCities.length === 0 ? (

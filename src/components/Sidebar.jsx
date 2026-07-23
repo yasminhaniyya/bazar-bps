@@ -101,7 +101,7 @@ export default function Sidebar({
               onClick={() => onLogout?.()}
               className="mt-3 w-full px-3 py-2 bg-[#FFCBA4] hover:bg-[#F8C993] text-[#3c2a1e] font-bold rounded transition-colors"
             >
-              Logout Admin
+              Logout
             </button>
           )}
         </div>

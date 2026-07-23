@@ -5,15 +5,15 @@ import Banner from '../components/Banner';
 import SearchBar from '../components/SearchBar';
 import ProductCard from '../components/ProductCard';
 import BottomCheckout from '../components/BottomCheckout';
-import CheckoutPage from './CheckoutPage';
 import RekapPage from './RekapPage';
+import CheckoutPage from './CheckoutPage';
 import { products as initialProducts, categories } from '../data/products';
 import LoginModal from '../components/LoginModal';
 
 export default function Dashboard() {
   const [role, setRole] = useState("Guest");
   const [currentView, setCurrentView] = useState(() => {
-    const activeScreen = localStorage.getItem('dwp_bps_active_screen');
+    const activeScreen = sessionStorage.getItem('dwp_bps_active_screen');
     if (activeScreen === 'checkout' || activeScreen === 'receipt') {
       return 'Checkout';
     }
@@ -26,28 +26,28 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [cart, setCart] = useState(() => {
     try {
-      const savedCart = localStorage.getItem('dwp_bps_cart');
+      const savedCart = sessionStorage.getItem('dwp_bps_cart');
       return savedCart ? JSON.parse(savedCart) : {};
     } catch (e) {
       return {};
     }
   });
 
-  // Persist cart to localStorage
+  // Persist cart to sessionStorage
   useEffect(() => {
-    localStorage.setItem('dwp_bps_cart', JSON.stringify(cart));
+    sessionStorage.setItem('dwp_bps_cart', JSON.stringify(cart));
   }, [cart]);
 
-  // Sync currentView with localStorage
+  // Sync currentView with sessionStorage
   useEffect(() => {
     if (currentView === 'Home') {
-      localStorage.setItem('dwp_bps_active_screen', 'home');
+      sessionStorage.setItem('dwp_bps_active_screen', 'home');
     } else if (currentView === 'Rekap Barang') {
-      localStorage.setItem('dwp_bps_active_screen', 'rekap');
+      sessionStorage.setItem('dwp_bps_active_screen', 'rekap');
     } else if (currentView === 'Checkout') {
-      const active = localStorage.getItem('dwp_bps_active_screen');
+      const active = sessionStorage.getItem('dwp_bps_active_screen');
       if (active !== 'receipt' && active !== 'checkout') {
-        localStorage.setItem('dwp_bps_active_screen', 'checkout');
+        sessionStorage.setItem('dwp_bps_active_screen', 'checkout');
       }
     }
   }, [currentView]);
@@ -64,6 +64,20 @@ export default function Dashboard() {
     if (roleParam === 'admin') {
       activeRole = 'Admin';
       localStorage.setItem('user_role', 'Admin');
+      
+      // Hapus data belanja tamu
+      sessionStorage.removeItem('dwp_bps_cart');
+      sessionStorage.removeItem('dwp_bps_form_draft');
+      sessionStorage.removeItem('dwp_bps_payment_proof');
+      sessionStorage.removeItem('dwp_bps_active_screen');
+      sessionStorage.removeItem('dwp_bps_active_invoice');
+      sessionStorage.removeItem('dwp_bps_order_time');
+      sessionStorage.removeItem('dwp_bps_receipt_items');
+      sessionStorage.removeItem('dwp_bps_user_profile');
+
+      // Refresh dengan mengarahkan ke URL bersih tanpa query param
+      window.location.href = window.location.origin + window.location.pathname;
+      return;
     } else if (roleParam === 'guest') {
       activeRole = 'Guest';
       localStorage.removeItem('user_role');
@@ -91,12 +105,25 @@ export default function Dashboard() {
     }
   };
 
-  const handleLoginSubmit = ({ email, password }) => {
+  const handleLoginSubmit = ({ username, password }) => {
     // Placeholder: accept any non-empty credentials and set Admin locally.
-    if (email && password) {
+    if (username && password) {
+      // Hapus data belanja tamu
+      sessionStorage.removeItem('dwp_bps_cart');
+      sessionStorage.removeItem('dwp_bps_form_draft');
+      sessionStorage.removeItem('dwp_bps_payment_proof');
+      sessionStorage.removeItem('dwp_bps_active_screen');
+      sessionStorage.removeItem('dwp_bps_active_invoice');
+      sessionStorage.removeItem('dwp_bps_order_time');
+      sessionStorage.removeItem('dwp_bps_receipt_items');
+      sessionStorage.removeItem('dwp_bps_user_profile');
+
       setRole('Admin');
       localStorage.setItem('user_role', 'Admin');
       setLoginOpen(false);
+
+      // Reload halaman agar kembali ke nol bersih
+      window.location.reload();
     }
   };
 
@@ -131,7 +158,6 @@ export default function Dashboard() {
     setCart({});
   };
 
-  // Navigate to checkout
   const handleGoToCheckout = () => {
     setCurrentView("Checkout");
   };
