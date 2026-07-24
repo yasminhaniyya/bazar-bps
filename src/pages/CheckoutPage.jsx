@@ -283,10 +283,15 @@ export default function CheckoutPage({
   const [cameraError, setCameraError] = useState(null);
   const videoRef = useRef(null);
 
+  // Spunbond Bag State
+  const [spunbondProduct, setSpunbondProduct] = useState(null);
+  const [buySpunbondBag, setBuySpunbondBag] = useState(false);
+  const [isSpunbondWarningOpen, setIsSpunbondWarningOpen] = useState(false);
+
   // Calculate pricing
   const subtotal = cartItems.reduce((acc, item) => acc + (item.harga * item.quantity), 0);
   const discount = 0; // Biarkan sesuai instruksi (diskon dinonaktifkan / 0)
-  const total = subtotal - discount;
+  const total = subtotal + (buySpunbondBag ? 5000 : 0) - discount;
 
   const receiptSubtotal = receiptItems.reduce((acc, item) => acc + (item.harga * item.quantity), 0);
   const receiptTotal = receiptSubtotal - discount;
@@ -482,6 +487,43 @@ export default function CheckoutPage({
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
+  }, []);
+
+  // Fetch or create "Tas Spunbond" product on mount
+  useEffect(() => {
+    const checkSpunbondProduct = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('name', 'Tas Spunbond')
+          .maybeSingle();
+        
+        if (error) throw error;
+        
+        if (!data) {
+          const { data: newProduct, error: insertError } = await supabase
+            .from('products')
+            .insert({
+              name: 'Tas Spunbond',
+              price: 5000,
+              category: 'Aksesoris',
+              stock: 99999, // infinite stock
+              image_url: 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=500'
+            })
+            .select()
+            .single();
+            
+          if (insertError) throw insertError;
+          setSpunbondProduct(newProduct);
+        } else {
+          setSpunbondProduct(data);
+        }
+      } catch (err) {
+        console.error("Gagal memeriksa/membuat produk Tas Spunbond:", err);
+      }
+    };
+    checkSpunbondProduct();
   }, []);
 
   // Handle Camera Stream Lifecycle (Locks to Back/Environment Camera)
@@ -696,8 +738,8 @@ export default function CheckoutPage({
     });
   };
 
-  // Submit Order Action
-  const handleSubmitOrder = async () => {
+  // Trigger checkout submit flow with validations and Spunbond check
+  const handleCheckoutSubmitTrigger = () => {
     if (!panggilan.trim()) {
       showToast('Pilih panggilan Bapak atau Ibu!', 'error');
       return;
@@ -737,6 +779,18 @@ export default function CheckoutPage({
       showToast('Bukti Pembayaran wajib diunggah!', 'error');
       return;
     }
+
+    // Check if Spunbond bag is selected. If not, trigger warning modal.
+    if (!buySpunbondBag) {
+      setIsSpunbondWarningOpen(true);
+    } else {
+      handleSubmitOrder();
+    }
+  };
+
+  // Submit Order Action
+  const handleSubmitOrder = async (forceSpunbond = null) => {
+    const actualBuySpunbond = forceSpunbond !== null ? forceSpunbond : buySpunbondBag;
 
     // Process payment loading
     setIsSubmitting(true);
@@ -787,6 +841,18 @@ export default function CheckoutPage({
         paymentProofUrl = publicUrlData.publicUrl;
       }
 
+      // Prepare final cart items list including Spunbond Bag if chosen
+      let finalCartItems = [...cartItems];
+      if (actualBuySpunbond && spunbondProduct) {
+        finalCartItems.push({
+          id: spunbondProduct.id,
+          nama: 'Tas Spunbond',
+          harga: 5000,
+          quantity: 1,
+          stok: 99999
+        });
+      }
+
       // Insert into orders table
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
@@ -800,7 +866,7 @@ export default function CheckoutPage({
           room_number: kamar,
           payment_method: activePaymentMethod === 'cash' ? 'Cash' : 'Transfer',
           payment_proof: paymentProofUrl,
-          total_price: total,
+          total_price: subtotal + (actualBuySpunbond ? 5000 : 0) - discount,
           notes: notes
         })
         .select()
@@ -812,7 +878,7 @@ export default function CheckoutPage({
       }
 
       // Insert into order_items table
-      const orderItemsToInsert = cartItems.map(item => ({
+      const orderItemsToInsert = finalCartItems.map(item => ({
         order_id: orderData.id,
         product_id: item.id,
         quantity: item.quantity,
@@ -856,9 +922,9 @@ export default function CheckoutPage({
       sessionStorage.setItem('dwp_bps_active_invoice', inv);
       sessionStorage.setItem('dwp_bps_active_screen', 'receipt');
       sessionStorage.setItem('dwp_bps_order_time', formattedDateTime);
-      sessionStorage.setItem('dwp_bps_receipt_items', JSON.stringify(cartItems));
+      sessionStorage.setItem('dwp_bps_receipt_items', JSON.stringify(finalCartItems));
 
-      setReceiptItems(cartItems);
+      setReceiptItems(finalCartItems);
       setInvoiceNo(inv);
       setOrderTime(formattedDateTime);
       
@@ -927,6 +993,7 @@ export default function CheckoutPage({
     setIsAdminCashChecked(false);
     setActivePaymentMethod('qris');
     setReceiptItems([]);
+    setBuySpunbondBag(false);
 
     // Clear specific LocalStorage fields
     sessionStorage.setItem('dwp_bps_active_screen', 'checkout');
@@ -960,6 +1027,7 @@ export default function CheckoutPage({
     setIsAdminCashChecked(false);
     setActivePaymentMethod('qris');
     setReceiptItems([]);
+    setBuySpunbondBag(false);
 
     // Clear specific sessionStorage fields
     sessionStorage.removeItem('dwp_bps_active_screen');
@@ -1207,9 +1275,38 @@ export default function CheckoutPage({
                   Admin Mode
                   <button
                     onClick={() => {
+                      // Hapus data belanja/checkout/receipt agar tidak bocor ke tamu/user lain
+                      sessionStorage.removeItem('dwp_bps_cart');
+                      sessionStorage.removeItem('dwp_bps_form_draft');
+                      sessionStorage.removeItem('dwp_bps_payment_proof');
+                      sessionStorage.removeItem('dwp_bps_active_screen');
+                      sessionStorage.removeItem('dwp_bps_active_invoice');
+                      sessionStorage.removeItem('dwp_bps_order_time');
+                      sessionStorage.removeItem('dwp_bps_receipt_items');
+                      sessionStorage.removeItem('dwp_bps_user_profile');
+
+                      onClearCart?.(); // hapus cart di parent state
+                      
+                      // Reset data checkout lokal
+                      setPanggilan('');
+                      setNama('');
+                      setWhatsapp('');
+                      setSelectedProvince(null);
+                      setSelectedCity(null);
+                      setProvQuery('');
+                      setCityQuery('');
+                      setHotel('');
+                      setKamar('');
+                      resetFileUpload();
+                      setIsAdminCashChecked(false);
+                      setActivePaymentMethod('qris');
+                      setReceiptItems([]);
+                      setBuySpunbondBag(false);
+
                       setRole('Guest');
                       localStorage.removeItem('user_role');
                       showToast('Logout dari Mode Admin', 'success');
+                      onBackToDashboard?.(); // arahkan kembali ke home
                     }}
                     className="text-amber-800 font-bold hover:text-amber-950 ml-1 text-xs"
                     title="Keluar Admin Mode"
@@ -1567,11 +1664,37 @@ export default function CheckoutPage({
                 )}
               </div>
 
+              {/* Spunbond Bag Option */}
+              <div className="bg-[#FFFBF7] p-3.5 rounded-2xl border border-[#FFCBA4]/45 flex items-center justify-between gap-3 shadow-3xs">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">🛍️</span>
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-bold text-[#3c2a1e]">Beli Tas Spunbond</p>
+                    <p className="text-[10px] text-slate-500 font-semibold leading-relaxed">Membantu membawa belanjaan Anda (+Rp 5.000)</p>
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={buySpunbondBag}
+                    onChange={(e) => setBuySpunbondBag(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600"></div>
+                </label>
+              </div>
+
               <div className="border-t border-dashed border-[#E5D3C0] pt-4 space-y-2 text-xs font-semibold text-slate-500">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
                   <span className="text-[#4A3222] font-bold">{formatRupiah(subtotal)}</span>
                 </div>
+                {buySpunbondBag && (
+                  <div className="flex justify-between text-[#4A3222] font-bold">
+                    <span>Tas Spunbond</span>
+                    <span>{formatRupiah(5000)}</span>
+                  </div>
+                )}
                 {discount > 0 && (
                   <div className="flex justify-between text-rose-600">
                     <span>Diskon DWP (Promo)</span>
@@ -1659,36 +1782,19 @@ export default function CheckoutPage({
                       <span className="text-red-500">S</span>
                       <span className="text-slate-400 font-bold text-[9px] ml-1 bg-slate-200 px-1 py-0.5 rounded">GPN</span>
                     </div>
-                    {/* Simulated QR Code */}
-                    <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-2xs relative w-36 h-36 flex items-center justify-center select-none">
-                      <div className="w-30 h-30 grid grid-cols-5 gap-1.5 p-1 relative">
-                        {/* Top-Left Corner Box */}
-                        <div className="border-[3px] border-black w-5 h-5 absolute top-0 left-0"></div>
-                        {/* Top-Right Corner Box */}
-                        <div className="border-[3px] border-black w-5 h-5 absolute top-0 right-0"></div>
-                        {/* Bottom-Left Corner Box */}
-                        <div className="border-[3px] border-black w-5 h-5 absolute bottom-0 left-0"></div>
-                        {/* Center DWP label */}
-                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-amber-600 border-2 border-white rounded-md text-white font-black text-[9px] px-1 shadow-2xs z-10">
-                          DWP
-                        </div>
-                        {/* Simulated noise pixels */}
-                        <div className="w-full h-full opacity-80 grid grid-cols-6 gap-1">
-                          {Array.from({ length: 36 }).map((_, i) => (
-                            <div
-                              key={i}
-                              className={`rounded-[1px] ${
-                                (i * 7 + 13) % 5 === 0 || (i * 3 + 1) % 4 === 0 
-                                  ? 'bg-black' 
-                                  : 'bg-transparent'
-                              }`}
-                            ></div>
-                          ))}
-                        </div>
-                      </div>
+                    {/* Actual QRIS Image */}
+                    <div className="bg-white p-2 rounded-2xl border border-slate-200 shadow-2xs relative w-48 overflow-hidden flex items-center justify-center select-none">
+                      <img
+                        src="/qris.jpg"
+                        alt="QRIS DWP JATIM"
+                        className="w-full h-auto object-contain rounded-xl"
+                        onError={(e) => {
+                          e.target.src = "https://images.unsplash.com/photo-1595079676339-1534801ad6cf?w=300"; // fallback if missing
+                        }}
+                      />
                     </div>
                     <p className="text-[10px] text-slate-500 font-semibold leading-relaxed max-w-xs">
-                      Pindai kode QRIS di atas untuk melakukan pembayaran cepat melalui M-Banking or E-Wallet pilihan Anda.
+                      Pindai kode QRIS di atas untuk melakukan pembayaran cepat melalui M-Banking atau E-Wallet pilihan Anda.
                     </p>
                   </div>
                 )}
@@ -1700,29 +1806,12 @@ export default function CheckoutPage({
                     <div className="flex items-center justify-between bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
                       <div className="space-y-1 text-xs font-semibold">
                         <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-md font-bold text-[9px] uppercase tracking-wider">Mandiri</span>
-                        <p className="font-extrabold text-[#3c2a1e] tracking-wide text-xs">124-00-0987654-3</p>
-                        <p className="text-[10px] text-slate-400 font-medium">a.n Dharma Wanita Persatuan BPS</p>
+                        <p className="font-extrabold text-[#3c2a1e] tracking-wide text-xs">142-00-1840277-5</p>
+                        <p className="text-[10px] text-slate-400 font-medium">a.n Nanik Hidayati</p>
                       </div>
                       <button
                         type="button"
-                        onClick={() => handleCopyBankAccount('1240009876543')}
-                        className="px-2.5 py-1.5 text-slate-600 hover:text-amber-800 hover:bg-amber-50 active:bg-amber-100 rounded-xl transition-colors border border-slate-200 flex items-center gap-1 text-[10px] font-bold"
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2" /></svg>
-                        Salin
-                      </button>
-                    </div>
-
-                    {/* BRI */}
-                    <div className="flex items-center justify-between bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
-                      <div className="space-y-1 text-xs font-semibold">
-                        <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-md font-bold text-[9px] uppercase tracking-wider">BRI</span>
-                        <p className="font-extrabold text-[#3c2a1e] tracking-wide text-xs">0341-01-000234-56-7</p>
-                        <p className="text-[10px] text-slate-400 font-medium">a.n Dharma Wanita Persatuan BPS</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleCopyBankAccount('034101000234567')}
+                        onClick={() => handleCopyBankAccount('1420018402775')}
                         className="px-2.5 py-1.5 text-slate-600 hover:text-amber-800 hover:bg-amber-50 active:bg-amber-100 rounded-xl transition-colors border border-slate-200 flex items-center gap-1 text-[10px] font-bold"
                       >
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2" /></svg>
@@ -1823,7 +1912,7 @@ export default function CheckoutPage({
               <button
                 type="button"
                 disabled={isSubmitting}
-                onClick={handleSubmitOrder}
+                onClick={handleCheckoutSubmitTrigger}
                 className="w-full py-4 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-sm rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
@@ -1910,6 +1999,52 @@ export default function CheckoutPage({
                 title="Ambil Foto"
               >
                 <div className="w-5 h-5 rounded-full bg-white"></div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Spunbond Warning Modal */}
+      {isSpunbondWarningOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-xs">
+          <div className="bg-[#FFFBF7] rounded-3xl border border-[#FFCBA4] p-6 w-full max-w-sm shadow-2xl relative flex flex-col space-y-4 text-[#4A3222] font-sans text-center">
+            <div className="text-4xl">🛍️</div>
+            <h3 className="font-black text-base text-[#4A3222] tracking-wide">
+              Tambahkan Tas Spunbond?
+            </h3>
+            <p className="text-xs text-slate-500 font-semibold leading-relaxed">
+              Anda belum menambahkan Tas Spunbond (Rp 5.000) untuk membawa belanjaan Anda. Apakah Anda ingin menambahkannya sekarang?
+            </p>
+            
+            <div className="flex flex-col gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setBuySpunbondBag(true);
+                  setIsSpunbondWarningOpen(false);
+                  handleSubmitOrder(true);
+                }}
+                className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-colors cursor-pointer"
+              >
+                Ya, Tambahkan Tas (+Rp 5.000)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSpunbondWarningOpen(false);
+                  handleSubmitOrder(false);
+                }}
+                className="w-full py-3 bg-white border border-[#FFCBA4] text-[#4A3222] hover:bg-slate-50 font-extrabold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
+              >
+                Tidak, Lanjutkan Tanpa Tas
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsSpunbondWarningOpen(false)}
+                className="w-full py-2.5 text-slate-400 hover:text-slate-600 font-bold text-xs transition-colors cursor-pointer"
+              >
+                Batal
               </button>
             </div>
           </div>

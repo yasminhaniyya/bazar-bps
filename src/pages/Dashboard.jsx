@@ -144,10 +144,21 @@ export default function Dashboard() {
   }, []);
 
   const handleLogout = () => {
+    // Hapus data belanja/checkout/receipt agar tidak bocor ke tamu/user lain
+    sessionStorage.removeItem('dwp_bps_cart');
+    sessionStorage.removeItem('dwp_bps_form_draft');
+    sessionStorage.removeItem('dwp_bps_payment_proof');
+    sessionStorage.removeItem('dwp_bps_active_screen');
+    sessionStorage.removeItem('dwp_bps_active_invoice');
+    sessionStorage.removeItem('dwp_bps_order_time');
+    sessionStorage.removeItem('dwp_bps_receipt_items');
+    sessionStorage.removeItem('dwp_bps_user_profile');
+
+    setCart({});
     setRole('Guest');
     localStorage.removeItem('user_role');
     setIsSidebarOpen(false);
-    if (currentView !== 'Home') setCurrentView('Home');
+    setCurrentView('Home');
   };
 
   // Open login modal (Guest) or logout (Admin)
@@ -155,11 +166,20 @@ export default function Dashboard() {
     if (role === "Guest") {
       setLoginOpen(true);
     } else {
+      // Hapus data belanja/checkout/receipt agar tidak bocor ke tamu/user lain
+      sessionStorage.removeItem('dwp_bps_cart');
+      sessionStorage.removeItem('dwp_bps_form_draft');
+      sessionStorage.removeItem('dwp_bps_payment_proof');
+      sessionStorage.removeItem('dwp_bps_active_screen');
+      sessionStorage.removeItem('dwp_bps_active_invoice');
+      sessionStorage.removeItem('dwp_bps_order_time');
+      sessionStorage.removeItem('dwp_bps_receipt_items');
+      sessionStorage.removeItem('dwp_bps_user_profile');
+
+      setCart({});
       setRole("Guest");
       localStorage.removeItem('user_role');
-      if (currentView === "Rekap Barang") {
-        setCurrentView("Home");
-      }
+      setCurrentView("Home");
     }
   };
 
