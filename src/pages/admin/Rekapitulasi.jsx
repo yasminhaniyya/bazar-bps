@@ -39,7 +39,8 @@ export default function Rekapitulasi() {
               invoice_number,
               buyer_name,
               payment_method,
-              total_price
+              total_price,
+              notes
             ),
             products!inner (
               name
@@ -200,7 +201,7 @@ export default function Rekapitulasi() {
               <th className="p-4 font-semibold text-center whitespace-nowrap">Jml</th>
               <th className="p-4 font-semibold text-right whitespace-nowrap">Total Harga</th>
               <th className="p-4 font-semibold whitespace-nowrap">Metode</th>
-
+              <th className="p-4 font-semibold whitespace-nowrap">Catatan</th>
             </tr>
           </thead>
           <tbody>
@@ -220,6 +221,7 @@ export default function Rekapitulasi() {
                   <td className="p-4 text-center whitespace-nowrap">{item.quantity}</td>
                   <td className="p-4 text-right font-medium text-gray-800 whitespace-nowrap">{formatRupiah(item.subtotal)}</td>
                   <td className="p-4 whitespace-nowrap">{item.orders.payment_method}</td>
+                  <td className="p-4 whitespace-nowrap text-gray-600">{item.orders.notes || '-'}</td>
                 </tr>
               ))
             )}

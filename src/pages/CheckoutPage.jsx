@@ -241,6 +241,7 @@ export default function CheckoutPage({
   const [selectedCity, setSelectedCity] = useState(null);
   const [hotel, setHotel] = useState('');
   const [kamar, setKamar] = useState('');
+  const [notes, setNotes] = useState('');
 
   // Dropdown States
   const [provincesList, setProvincesList] = useState([]);
@@ -394,6 +395,7 @@ export default function CheckoutPage({
           if (draft.whatsapp) setWhatsapp(draft.whatsapp);
           if (draft.hotel) setHotel(draft.hotel);
           if (draft.kamar) setKamar(draft.kamar);
+          if (draft.notes) setNotes(draft.notes);
           if (draft.province) {
             setSelectedProvince(draft.province);
             setProvQuery(draft.province.name);
@@ -445,12 +447,13 @@ export default function CheckoutPage({
       whatsapp,
       hotel,
       kamar,
+      notes,
       province: selectedProvince,
       city: selectedCity,
       cashChecked: isAdminCashChecked
     };
     sessionStorage.setItem('dwp_bps_form_draft', JSON.stringify(draft));
-  }, [nama, whatsapp, hotel, kamar, selectedProvince, selectedCity, isAdminCashChecked]);
+  }, [nama, whatsapp, hotel, kamar, notes, selectedProvince, selectedCity, isAdminCashChecked]);
 
   // Click outside to close dropdown handlers
   useEffect(() => {
@@ -487,6 +490,7 @@ export default function CheckoutPage({
           if (profile.whatsapp) setWhatsapp(profile.whatsapp);
           if (profile.hotel) setHotel(profile.hotel);
           if (profile.kamar) setKamar(profile.kamar);
+          if (profile.notes) setNotes(profile.notes);
           if (profile.province) {
             setSelectedProvince(profile.province);
             setProvQuery(profile.province.name);
@@ -692,7 +696,8 @@ export default function CheckoutPage({
           room_number: kamar,
           payment_method: activePaymentMethod === 'cash' ? 'Cash' : 'Transfer',
           payment_proof: paymentProofUrl,
-          total_price: total
+          total_price: total,
+          notes: notes
         })
         .select()
         .single();
@@ -738,7 +743,8 @@ export default function CheckoutPage({
         province: selectedProvince,
         city: selectedCity,
         hotel,
-        kamar
+        kamar,
+        notes
       };
       sessionStorage.setItem('dwp_bps_user_profile', JSON.stringify(userProfile));
       
@@ -812,6 +818,7 @@ export default function CheckoutPage({
     setCityQuery('');
     setHotel('');
     setKamar('');
+    setNotes('');
     resetFileUpload();
     setIsAdminCashChecked(false);
     setActivePaymentMethod('qris');
@@ -844,6 +851,7 @@ export default function CheckoutPage({
     setCityQuery('');
     setHotel('');
     setKamar('');
+    setNotes('');
     resetFileUpload();
     setIsAdminCashChecked(false);
     setActivePaymentMethod('qris');
@@ -959,6 +967,7 @@ export default function CheckoutPage({
               <p className="tracking-wide text-sm text-[#D97736]">{hotel.toUpperCase()}</p>
               <p className="font-semibold text-slate-500">{whatsapp}</p>
               <p className="font-semibold text-slate-500">Kamar No: {kamar}</p>
+              {notes && <p className="font-semibold text-slate-500">Catatan: {notes}</p>}
             </div>
 
             {/* Ref Code */}
@@ -1388,6 +1397,23 @@ export default function CheckoutPage({
                       className="w-full text-xs font-semibold text-[#4A3222] bg-transparent outline-none border-none placeholder-[#A1887F]/75 p-0"
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-[#4A3222]">Catatan (Opsional)</label>
+                <div className="relative rounded-2xl border border-[#E5D3C0] bg-white focus-within:border-[#C19A6B] focus-within:ring-2 focus-within:ring-[#C19A6B]/15 transition-all flex items-center px-4 py-3">
+                  <svg className="w-4 h-4 text-[#4A3222] mr-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  <input
+                    type="text"
+                    placeholder="Contoh: isi jenis varian, dll."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    className="w-full text-xs font-semibold text-[#4A3222] bg-transparent outline-none border-none placeholder-[#A1887F]/75 p-0"
+                  />
                 </div>
               </div>
             </form>

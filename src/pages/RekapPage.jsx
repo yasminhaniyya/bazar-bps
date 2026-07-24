@@ -33,7 +33,8 @@ export default function RekapPage({ onBackToDashboard }) {
             invoice_number,
             buyer_name,
             payment_method,
-            total_price
+            total_price,
+            notes
           ),
           products!inner (
             name
@@ -197,6 +198,7 @@ export default function RekapPage({ onBackToDashboard }) {
                   <th className="p-4 font-bold text-center">Jml</th>
                   <th className="p-4 font-bold text-right">Total</th>
                   <th className="p-4 font-bold">Metode</th>
+                  <th className="p-4 font-bold">Catatan</th>
                 </tr>
               </thead>
               <tbody className="text-sm text-[#4A3222]">
@@ -216,6 +218,7 @@ export default function RekapPage({ onBackToDashboard }) {
                       <td className="p-4 text-center font-bold">{item.quantity}</td>
                       <td className="p-4 text-right font-bold whitespace-nowrap">{formatRupiah(item.subtotal)}</td>
                       <td className="p-4 whitespace-nowrap">{item.orders.payment_method}</td>
+                      <td className="p-4 whitespace-nowrap opacity-70">{item.orders.notes || '-'}</td>
                     </tr>
                   ))
                 )}
