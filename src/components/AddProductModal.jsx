@@ -1,26 +1,47 @@
 import { useState, useMemo, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
-export default function AddProductModal({ isOpen, onClose, onSubmit }) {
+export default function AddProductModal({ isOpen, onClose, onSubmit, onDelete, mode = 'add', initialProduct = null }) {
   const [nama, setNama] = useState('');
   const [harga, setHarga] = useState('');
   const [isHargaFocused, setIsHargaFocused] = useState(false);
   const [stock, setStock] = useState('');
   const [category, setCategory] = useState('Kue & Roti');
   const [gambarFile, setGambarFile] = useState(null);
+  const [existingImageUrl, setExistingImageUrl] = useState('');
   
   const [loading, setLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const preview = useMemo(() => {
-    if (!gambarFile) return '';
-    return URL.createObjectURL(gambarFile);
-  }, [gambarFile]);
+    if (gambarFile) return URL.createObjectURL(gambarFile);
+    return existingImageUrl || '';
+  }, [gambarFile, existingImageUrl]);
 
   useEffect(() => {
     if (isOpen) {
       const prev = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
+      if (initialProduct) {
+        setNama(initialProduct.nama || '');
+        setHarga(initialProduct.harga?.toString() || '');
+        setStock(initialProduct.stok?.toString() || '');
+        setCategory(initialProduct.kategori || 'Kue & Roti');
+        setExistingImageUrl(initialProduct.gambarPreview || initialProduct.gambar || '');
+        setGambarFile(null);
+        setError(null);
+        setLoading(false);
+      } else {
+        setNama('');
+        setHarga('');
+        setStock('');
+        setCategory('Kue & Roti');
+        setGambarFile(null);
+        setExistingImageUrl('');
+        setError(null);
+        setLoading(false);
+      }
       return () => {
         document.body.style.overflow = prev;
       };
@@ -30,11 +51,12 @@ export default function AddProductModal({ isOpen, onClose, onSubmit }) {
       setStock('');
       setCategory('Kue & Roti');
       setGambarFile(null);
+      setExistingImageUrl('');
       setError(null);
       setLoading(false);
     }
     return undefined;
-  }, [isOpen]);
+  }, [isOpen, initialProduct]);
 
   useEffect(() => {
     return () => {
@@ -53,7 +75,7 @@ export default function AddProductModal({ isOpen, onClose, onSubmit }) {
     setError(null);
 
     try {
-      let imageUrl = null;
+      let imageUrl = existingImageUrl || null;
 
       if (gambarFile) {
         const fileExt = gambarFile.name.split('.').pop();
@@ -71,37 +93,69 @@ export default function AddProductModal({ isOpen, onClose, onSubmit }) {
           .getPublicUrl(filePath);
 
         imageUrl = publicUrl;
-      } else {
-        throw new Error("Mohon tambahkan foto barang terlebih dahulu.");
       }
 
-      const { data: insertedProduct, error: dbError } = await supabase
-        .from('products')
-        .insert([
-          {
+      if (mode === 'edit' && initialProduct?.id) {
+        const { data: updatedProduct, error: dbError } = await supabase
+          .from('products')
+          .update({
             name: nama.trim(),
             price: Number(harga) || 0,
             stock: Number(stock) || 0,
             category: category,
             image_url: imageUrl,
             is_active: true
-          }
-        ])
-        .select()
-        .single();
+          })
+          .eq('id', initialProduct.id)
+          .select()
+          .single();
 
-      if (dbError) throw dbError;
+        if (dbError) throw dbError;
 
-      const payload = {
-        id: insertedProduct?.id || Date.now(),
-        nama: nama.trim(),
-        harga: Number(harga) || 0,
-        stock: Number(stock) || 0,
-        kategori: category,
-        gambarPreview: imageUrl
-      };
-      
-      onSubmit?.(payload);
+        const payload = {
+          id: updatedProduct?.id || initialProduct.id,
+          nama: nama.trim(),
+          harga: Number(harga) || 0,
+          stock: Number(stock) || 0,
+          kategori: category,
+          gambarPreview: imageUrl
+        };
+
+        onSubmit?.(payload);
+      } else {
+        if (!imageUrl) {
+          throw new Error("Mohon tambahkan foto barang terlebih dahulu.");
+        }
+
+        const { data: insertedProduct, error: dbError } = await supabase
+          .from('products')
+          .insert([
+            {
+              name: nama.trim(),
+              price: Number(harga) || 0,
+              stock: Number(stock) || 0,
+              category: category,
+              image_url: imageUrl,
+              is_active: true
+            }
+          ])
+          .select()
+          .single();
+
+        if (dbError) throw dbError;
+
+        const payload = {
+          id: insertedProduct?.id || Date.now(),
+          nama: nama.trim(),
+          harga: Number(harga) || 0,
+          stock: Number(stock) || 0,
+          kategori: category,
+          gambarPreview: imageUrl
+        };
+        
+        onSubmit?.(payload);
+      }
+
       onClose?.();
       
     } catch (err) {
@@ -112,13 +166,36 @@ export default function AddProductModal({ isOpen, onClose, onSubmit }) {
     }
   };
 
+  const handleDeleteProduct = async () => {
+    if (!initialProduct?.id) return;
+    if (!window.confirm('Yakin ingin menghapus produk ini?')) return;
+    setError(null);
+    setDeleteLoading(true);
+
+    try {
+      const { error: deleteError } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', initialProduct.id);
+
+      if (deleteError) throw deleteError;
+      onDelete?.(initialProduct.id);
+      onClose?.();
+    } catch (err) {
+      console.error('Error deleting product:', err);
+      setError(err.message || 'Terjadi kesalahan saat menghapus barang');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
       <form onSubmit={handleSubmit} className="relative bg-white rounded-lg w-full max-w-md p-5 z-10 shadow-lg max-h-[90vh] overflow-y-auto">
-        <h3 className="text-sm font-bold text-slate-800 mb-3">Tambah Barang</h3>
+        <h3 className="text-sm font-bold text-slate-800 mb-3">{mode === 'edit' ? 'Edit Barang' : 'Tambah Barang'}</h3>
 
         {error && (
           <div className="mb-4 p-2 bg-red-50 text-red-600 border border-red-200 text-xs rounded font-medium">
@@ -185,11 +262,25 @@ export default function AddProductModal({ isOpen, onClose, onSubmit }) {
         <label className="block text-xs text-slate-600 mb-1">Stok Awal</label>
         <input required value={stock} onChange={(e) => setStock(e.target.value)} type="number" min="0" className="w-full mb-5 px-3 py-2 border rounded text-sm focus:ring-1 focus:ring-[#E67E22] outline-none" />
 
-        <div className="flex justify-end gap-2">
-          <button type="button" onClick={onClose} disabled={loading} className="px-4 py-2 bg-white border rounded text-sm font-medium hover:bg-slate-50 disabled:opacity-50">Batal</button>
-          <button type="submit" disabled={loading} className="px-4 py-2 bg-[#E67E22] text-white rounded text-sm font-bold hover:bg-[#D96A12] disabled:opacity-50 transition-colors">
-            {loading ? 'Menyimpan...' : 'Simpan Barang'}
-          </button>
+        <div className="flex justify-between gap-2">
+          {mode === 'edit' && initialProduct?.id ? (
+            <button
+              type="button"
+              onClick={handleDeleteProduct}
+              disabled={loading || deleteLoading}
+              className="px-4 py-2 bg-red-500 text-white rounded text-sm font-medium hover:bg-red-600 disabled:opacity-50 transition-colors"
+            >
+              {deleteLoading ? 'Menghapus...' : 'Hapus Produk'}
+            </button>
+          ) : (
+            <div />
+          )}
+          <div className="flex justify-end gap-2">
+            <button type="button" onClick={onClose} disabled={loading || deleteLoading} className="px-4 py-2 bg-white border rounded text-sm font-medium hover:bg-slate-50 disabled:opacity-50">Batal</button>
+            <button type="submit" disabled={loading || deleteLoading} className="px-4 py-2 bg-[#E67E22] text-white rounded text-sm font-bold hover:bg-[#D96A12] disabled:opacity-50 transition-colors">
+              {loading ? 'Menyimpan...' : mode === 'edit' ? 'Simpan Perubahan' : 'Simpan Barang'}
+            </button>
+          </div>
         </div>
       </form>
     </div>
