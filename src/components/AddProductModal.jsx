@@ -12,6 +12,7 @@ export default function AddProductModal({ isOpen, onClose, onSubmit, onDelete, m
   
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [error, setError] = useState(null);
 
   const preview = useMemo(() => {
@@ -166,16 +167,15 @@ export default function AddProductModal({ isOpen, onClose, onSubmit, onDelete, m
     }
   };
 
-  const handleDeleteProduct = async () => {
+  const confirmDeleteAction = async () => {
     if (!initialProduct?.id) return;
-    if (!window.confirm('Yakin ingin menghapus produk ini?')) return;
     setError(null);
     setDeleteLoading(true);
-
+    setShowConfirmDelete(false);
     try {
       const { error: deleteError } = await supabase
         .from('products')
-        .delete()
+        .update({ is_active: false })
         .eq('id', initialProduct.id);
 
       if (deleteError) throw deleteError;
@@ -187,6 +187,10 @@ export default function AddProductModal({ isOpen, onClose, onSubmit, onDelete, m
     } finally {
       setDeleteLoading(false);
     }
+  };
+
+  const handleDeleteProduct = () => {
+    setShowConfirmDelete(true);
   };
 
   if (!isOpen) return null;
@@ -283,6 +287,43 @@ export default function AddProductModal({ isOpen, onClose, onSubmit, onDelete, m
           </div>
         </div>
       </form>
+
+      {/* Delete Confirmation Modal */}
+      {showConfirmDelete && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowConfirmDelete(false)} />
+          <div className="relative bg-white rounded-xl w-full max-w-sm p-6 z-10 shadow-2xl scale-100 transform transition-all">
+            <div className="mb-5 text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-slate-800 mb-2">Hapus Barang?</h3>
+              <p className="text-sm text-slate-600">
+                Apakah kamu yakin ingin menghapus <strong>{nama}</strong>? Barang ini akan disembunyikan dari etalase.
+              </p>
+            </div>
+            
+            <div className="flex gap-3 justify-center">
+              <button 
+                type="button" 
+                onClick={() => setShowConfirmDelete(false)} 
+                className="flex-1 px-4 py-2.5 bg-slate-100 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-200 transition-colors"
+              >
+                Batal
+              </button>
+              <button 
+                type="button" 
+                onClick={confirmDeleteAction} 
+                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors"
+              >
+                Ya, Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

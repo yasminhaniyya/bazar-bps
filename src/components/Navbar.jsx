@@ -1,26 +1,27 @@
- 
-import bpsLogo from '../assets/bps-logo.svg';
-
-export default function Navbar({ role = "Guest", onToggleSidebar, onLoginClick }) {
+export default function Navbar({ role = "Guest", onToggleSidebar, onLoginClick, showSidebarToggle = true }) {
   return (
     <header className="sticky top-0 z-30 bg-white border-b border-[#FFCBA4]/60 shadow-xs w-full">
       <div className="w-full px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         {/* Left: Sidebar Toggle & BPS Logo */}
         <div className="flex items-center gap-3">
-          <button
-            onClick={onToggleSidebar}
-            className="p-1.5 rounded-md text-[#3c2a1e] hover:bg-[#FFCBA4]/30 transition-colors focus:outline-none border border-[#FFCBA4]/60"
-            aria-label="Tombol menu"
-            title="Buka Menu Sidebar"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
+          {showSidebarToggle ? (
+            <button
+              onClick={onToggleSidebar}
+              className="p-1.5 rounded-md text-[#3c2a1e] hover:bg-[#FFCBA4]/30 transition-colors focus:outline-none border border-[#FFCBA4]/60"
+              aria-label="Tombol menu"
+              title="Buka Menu Sidebar"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          ) : (
+            <div className="w-8" />
+          )}
 
           <div className="flex items-center gap-3">
             <img
-              src={bpsLogo}
+              src="/logo bps.png"
               alt="Logo BPS"
               className="h-7 w-auto object-contain"
             />

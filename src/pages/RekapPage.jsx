@@ -33,7 +33,8 @@ export default function RekapPage({ onBackToDashboard }) {
             invoice_number,
             buyer_name,
             payment_method,
-            total_price
+            total_price,
+            notes
           ),
           products!inner (
             name
@@ -100,6 +101,90 @@ export default function RekapPage({ onBackToDashboard }) {
      }
   };
 
+  const exportToCSV = async () => {
+    try {
+      let query = supabase
+        .from('order_items')
+        .select(`
+          id,
+          quantity,
+          price,
+          subtotal,
+          orders!inner (
+            id,
+            ordered_at,
+            invoice_number,
+            buyer_name,
+            payment_method,
+            total_price,
+            notes
+          ),
+          products!inner (
+            name
+          )
+        `);
+
+      if (searchQuery) {
+        query = query.or(
+          `buyer_name.ilike.%${searchQuery}%,invoice_number.ilike.%${searchQuery}%`,
+          { referencedTable: 'orders' }
+        );
+      }
+
+      query = query.order('ordered_at', { referencedTable: 'orders', ascending: sortOrder === 'asc' });
+
+      const { data: exportData, error: exportError } = await query;
+      if (exportError) throw exportError;
+
+      let finalData = exportData || [];
+      if (searchQuery) {
+          const lowerQuery = searchQuery.toLowerCase();
+          finalData = finalData.filter(item => 
+              item.products.name.toLowerCase().includes(lowerQuery) ||
+              item.orders.buyer_name.toLowerCase().includes(lowerQuery) ||
+              item.orders.invoice_number.toLowerCase().includes(lowerQuery)
+          );
+      }
+
+      if (finalData.length === 0) {
+        alert('Tidak ada data untuk diexport');
+        return;
+      }
+
+      const headers = ['No', 'Tanggal Dipesan', 'Invoice', 'Nama Pembeli', 'Nama Produk', 'Harga Satuan', 'Jumlah', 'Total Harga', 'Metode Pembayaran', 'Catatan'];
+      const csvRows = [headers.join(',')];
+
+      finalData.forEach((item, index) => {
+        const row = [
+          index + 1,
+          `"${new Date(item.orders.ordered_at).toLocaleString('id-ID')}"`,
+          `"${item.orders.invoice_number}"`,
+          `"${item.orders.buyer_name}"`,
+          `"${item.products.name}"`,
+          item.price,
+          item.quantity,
+          item.subtotal,
+          `"${item.orders.payment_method}"`,
+          `"${(item.orders.notes || '').replace(/"/g, '""')}"`
+        ];
+        csvRows.push(row.join(','));
+      });
+
+      const csvContent = csvRows.join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `Rekapitulasi_Bazar_${new Date().getTime()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error("Error exporting to CSV:", err);
+      alert('Gagal mengekspor data ke CSV');
+    }
+  };
+
   useEffect(() => {
     fetchData();
   }, [page, sortOrder, searchQuery]);
@@ -132,9 +217,18 @@ export default function RekapPage({ onBackToDashboard }) {
                 Panel Rekapitulasi Data Produk - Admin BPS
               </p>
             </div>
-            <span className="px-4 py-1.5 bg-[#FFCBA4] text-[#4A3222]/90 border border-[#FFCBA4] text-xs font-bold rounded-full">
-              Role: Admin
-            </span>
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={exportToCSV}
+                className="px-4 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 text-xs font-bold rounded-full transition-colors flex items-center gap-2 shadow-sm"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                Export CSV
+              </button>
+              <span className="px-4 py-1.5 bg-[#FFCBA4] text-[#4A3222]/90 border border-[#FFCBA4] text-xs font-bold rounded-full">
+                Role: Admin
+              </span>
+            </div>
           </div>
 
           {error && (
@@ -197,6 +291,7 @@ export default function RekapPage({ onBackToDashboard }) {
                   <th className="p-4 font-bold text-center">Jml</th>
                   <th className="p-4 font-bold text-right">Total</th>
                   <th className="p-4 font-bold">Metode</th>
+                  <th className="p-4 font-bold">Catatan</th>
                 </tr>
               </thead>
               <tbody className="text-sm text-[#4A3222]">
@@ -216,6 +311,7 @@ export default function RekapPage({ onBackToDashboard }) {
                       <td className="p-4 text-center font-bold">{item.quantity}</td>
                       <td className="p-4 text-right font-bold whitespace-nowrap">{formatRupiah(item.subtotal)}</td>
                       <td className="p-4 whitespace-nowrap">{item.orders.payment_method}</td>
+                      <td className="p-4 whitespace-nowrap opacity-70">{item.orders.notes || '-'}</td>
                     </tr>
                   ))
                 )}

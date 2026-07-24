@@ -77,6 +77,7 @@ export default function Dashboard() {
         const { data, error } = await supabase
           .from('products')
           .select('*')
+          .eq('is_active', true)
           .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -146,7 +147,7 @@ export default function Dashboard() {
     setRole('Guest');
     localStorage.removeItem('user_role');
     setIsSidebarOpen(false);
-    if (currentView === 'Rekap Barang') setCurrentView('Home');
+    if (currentView !== 'Home') setCurrentView('Home');
   };
 
   // Open login modal (Guest) or logout (Admin)
@@ -337,6 +338,7 @@ export default function Dashboard() {
         role={role}
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         onLoginClick={handleLoginClick}
+        showSidebarToggle={currentView !== 'Edit Barang'}
       />
       <LoginModal isOpen={loginOpen} onClose={() => setLoginOpen(false)} onSubmit={handleLoginSubmit} />
 
