@@ -1,6 +1,18 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { formatRupiah } from '../utils/formatCurrency';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
+
+const parseLocation = (locString) => {
+  if (!locString) return '-';
+  try {
+    const parsed = typeof locString === 'string' ? JSON.parse(locString) : locString;
+    return parsed?.name || locString;
+  } catch (e) {
+    return locString;
+  }
+};
 
 export default function RekapPage({ onBackToDashboard }) {
   const [data, setData] = useState([]);
@@ -32,6 +44,11 @@ export default function RekapPage({ onBackToDashboard }) {
             ordered_at,
             invoice_number,
             buyer_name,
+            phone,
+            province,
+            city,
+            hotel,
+            room_number,
             payment_method,
             total_price,
             notes
@@ -101,7 +118,7 @@ export default function RekapPage({ onBackToDashboard }) {
      }
   };
 
-  const exportToCSV = async () => {
+  const exportToExcel = async () => {
     try {
       let query = supabase
         .from('order_items')
@@ -115,6 +132,11 @@ export default function RekapPage({ onBackToDashboard }) {
             ordered_at,
             invoice_number,
             buyer_name,
+            phone,
+            province,
+            city,
+            hotel,
+            room_number,
             payment_method,
             total_price,
             notes
@@ -151,37 +173,78 @@ export default function RekapPage({ onBackToDashboard }) {
         return;
       }
 
-      const headers = ['No', 'Tanggal Dipesan', 'Invoice', 'Nama Pembeli', 'Nama Produk', 'Harga Satuan', 'Jumlah', 'Total Harga', 'Metode Pembayaran', 'Catatan'];
-      const csvRows = [headers.join(',')];
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Rekapitulasi Bazar');
 
+      // Define columns
+      worksheet.columns = [
+        { header: 'No', key: 'no', width: 5 },
+        { header: 'Tanggal Dipesan', key: 'tanggal', width: 20 },
+        { header: 'Invoice', key: 'invoice', width: 15 },
+        { header: 'Nama Pembeli', key: 'nama', width: 25 },
+        { header: 'No. WA', key: 'wa', width: 15 },
+        { header: 'Provinsi', key: 'provinsi', width: 20 },
+        { header: 'Kab/Kota', key: 'kota', width: 20 },
+        { header: 'Hotel', key: 'hotel', width: 25 },
+        { header: 'No. Kamar', key: 'kamar', width: 12 },
+        { header: 'Nama Produk', key: 'produk', width: 25 },
+        { header: 'Harga Satuan', key: 'harga_satuan', width: 15 },
+        { header: 'Jumlah', key: 'jumlah', width: 8 },
+        { header: 'Total Harga', key: 'total_harga', width: 15 },
+        { header: 'Metode', key: 'metode', width: 12 },
+        { header: 'Catatan', key: 'catatan', width: 30 }
+      ];
+
+      // Add Data
       finalData.forEach((item, index) => {
-        const row = [
-          index + 1,
-          `"${new Date(item.orders.ordered_at).toLocaleString('id-ID')}"`,
-          `"${item.orders.invoice_number}"`,
-          `"${item.orders.buyer_name}"`,
-          `"${item.products.name}"`,
-          item.price,
-          item.quantity,
-          item.subtotal,
-          `"${item.orders.payment_method}"`,
-          `"${(item.orders.notes || '').replace(/"/g, '""')}"`
-        ];
-        csvRows.push(row.join(','));
+        worksheet.addRow({
+          no: index + 1,
+          tanggal: new Date(item.orders.ordered_at).toLocaleString('id-ID'),
+          invoice: item.orders.invoice_number,
+          nama: item.orders.buyer_name,
+          wa: item.orders.phone || '-',
+          provinsi: parseLocation(item.orders.province),
+          kota: parseLocation(item.orders.city),
+          hotel: item.orders.hotel || '-',
+          kamar: item.orders.room_number || '-',
+          produk: item.products.name,
+          harga_satuan: item.price,
+          jumlah: item.quantity,
+          total_harga: item.subtotal,
+          metode: item.orders.payment_method,
+          catatan: item.orders.notes || '-'
+        });
       });
 
-      const csvContent = csvRows.join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.setAttribute('href', url);
-      link.setAttribute('download', `Rekapitulasi_Bazar_${new Date().getTime()}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      // Styling: Borders and Alignment for all cells
+      worksheet.eachRow((row, rowNumber) => {
+        row.eachCell((cell) => {
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+          };
+          if (rowNumber === 1) {
+            // Header styling
+            cell.font = { bold: true };
+            cell.alignment = { vertical: 'middle', horizontal: 'center' };
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFFFCBA4' }
+            };
+          } else {
+            cell.alignment = { vertical: 'middle' };
+          }
+        });
+      });
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      saveAs(new Blob([buffer]), `Rekapitulasi_Bazar_${new Date().getTime()}.xlsx`);
     } catch (err) {
-      console.error("Error exporting to CSV:", err);
-      alert('Gagal mengekspor data ke CSV');
+      console.error("Error exporting to Excel:", err);
+      alert('Gagal mengekspor data ke Excel');
     }
   };
 
@@ -219,11 +282,11 @@ export default function RekapPage({ onBackToDashboard }) {
             </div>
             <div className="flex items-center gap-3">
               <button 
-                onClick={exportToCSV}
+                onClick={exportToExcel}
                 className="px-4 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 text-xs font-bold rounded-full transition-colors flex items-center gap-2 shadow-sm"
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                Export CSV
+                Export Excel
               </button>
               <span className="px-4 py-1.5 bg-[#FFCBA4] text-[#4A3222]/90 border border-[#FFCBA4] text-xs font-bold rounded-full">
                 Role: Admin
@@ -286,6 +349,11 @@ export default function RekapPage({ onBackToDashboard }) {
                   <th className="p-4 font-bold">Tanggal</th>
                   <th className="p-4 font-bold">Invoice</th>
                   <th className="p-4 font-bold">Pembeli</th>
+                  <th className="p-4 font-bold">No. WA</th>
+                  <th className="p-4 font-bold">Provinsi</th>
+                  <th className="p-4 font-bold">Kab/Kota</th>
+                  <th className="p-4 font-bold">Hotel</th>
+                  <th className="p-4 font-bold">Kamar</th>
                   <th className="p-4 font-bold">Produk</th>
                   <th className="p-4 font-bold text-right">Harga Satuan</th>
                   <th className="p-4 font-bold text-center">Jml</th>
@@ -296,9 +364,9 @@ export default function RekapPage({ onBackToDashboard }) {
               </thead>
               <tbody className="text-sm text-[#4A3222]">
                 {loading ? (
-                  <tr><td colSpan="9" className="text-center p-8 font-medium">Memuat data...</td></tr>
+                  <tr><td colSpan="15" className="text-center p-8 font-medium">Memuat data...</td></tr>
                 ) : data.length === 0 ? (
-                  <tr><td colSpan="9" className="text-center p-8 font-medium">Tidak ada data pesanan.</td></tr>
+                  <tr><td colSpan="15" className="text-center p-8 font-medium">Tidak ada data pesanan.</td></tr>
                 ) : (
                   data.map((item, index) => (
                     <tr key={item.id} className="border-b border-[#FFCBA4]/30 hover:bg-[#FFFBF7] transition-colors">
@@ -306,6 +374,11 @@ export default function RekapPage({ onBackToDashboard }) {
                       <td className="p-4 whitespace-nowrap">{new Date(item.orders.ordered_at).toLocaleString('id-ID')}</td>
                       <td className="p-4 font-bold text-[#D96A12] whitespace-nowrap">{item.orders.invoice_number}</td>
                       <td className="p-4 whitespace-nowrap font-medium">{item.orders.buyer_name}</td>
+                      <td className="p-4 whitespace-nowrap">{item.orders.phone || '-'}</td>
+                      <td className="p-4 whitespace-nowrap">{parseLocation(item.orders.province)}</td>
+                      <td className="p-4 whitespace-nowrap">{parseLocation(item.orders.city)}</td>
+                      <td className="p-4 whitespace-nowrap">{item.orders.hotel || '-'}</td>
+                      <td className="p-4 whitespace-nowrap">{item.orders.room_number || '-'}</td>
                       <td className="p-4 min-w-[200px]">{item.products.name}</td>
                       <td className="p-4 text-right whitespace-nowrap">{formatRupiah(item.price)}</td>
                       <td className="p-4 text-center font-bold">{item.quantity}</td>
