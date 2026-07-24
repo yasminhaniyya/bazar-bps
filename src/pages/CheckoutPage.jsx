@@ -292,7 +292,6 @@ export default function CheckoutPage({
   const hotelRef = useRef(null);
   const [showHotelDropdown, setShowHotelDropdown] = useState(false);
   const [hotelOption, setHotelOption] = useState('');
-  const [customHotelName, setCustomHotelName] = useState('');
 
   // Calculate pricing
   const subtotal = cartItems.reduce((acc, item) => acc + (item.harga * item.quantity), 0);
@@ -517,7 +516,7 @@ export default function CheckoutPage({
         const { data, error } = await supabase
           .from('products')
           .select('*')
-          .eq('name', 'Tas Spunbond')
+          .ilike('name', 'Tas Spunbond')
           .maybeSingle();
         
         if (error) throw error;
@@ -530,6 +529,7 @@ export default function CheckoutPage({
               price: 5000,
               category: 'Aksesoris',
               stock: 99999, // infinite stock
+              is_active: true,
               image_url: 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=500'
             })
             .select()
@@ -793,10 +793,6 @@ export default function CheckoutPage({
       showToast('Pilih Hotel Menginap!', 'error');
       return;
     }
-    if (hotelOption === 'Lainnya' && !customHotelName.trim()) {
-      showToast('Ketik nama hotel Anda!', 'error');
-      return;
-    }
     if (!kamar.trim()) {
       showToast('Nomor Kamar wajib diisi!', 'error');
       return;
@@ -813,12 +809,7 @@ export default function CheckoutPage({
       return;
     }
 
-    // Check if Spunbond bag is selected. If not, trigger warning modal.
-    if (spunbondQuantity === 0) {
-      setIsSpunbondWarningOpen(true);
-    } else {
-      handleSubmitOrder();
-    }
+    handleSubmitOrder();
   };
 
   // Submit Order Action
@@ -876,9 +867,63 @@ export default function CheckoutPage({
 
       // Prepare final cart items list including Spunbond Bag if chosen
       let finalCartItems = [...cartItems];
-      if (actualSpunbondQty > 0 && spunbondProduct) {
+      let currentSpunbondProduct = spunbondProduct;
+      
+      if (actualSpunbondQty > 0) {
+        if (!currentSpunbondProduct) {
+          try {
+            const { data, error } = await supabase
+              .from('products')
+              .select('*')
+              .ilike('name', 'Tas Spunbond')
+              .maybeSingle();
+            
+            if (data) {
+              currentSpunbondProduct = data;
+              setSpunbondProduct(data);
+            } else {
+              // Create it on demand
+              const { data: newProd, error: insertError } = await supabase
+                .from('products')
+                .insert({
+                  name: 'Tas Spunbond',
+                  price: 5000,
+                  category: 'Aksesoris',
+                  stock: 99999,
+                  is_active: true,
+                  image_url: 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=500'
+                })
+                .select()
+                .single();
+              
+              if (newProd) {
+                currentSpunbondProduct = newProd;
+                setSpunbondProduct(newProd);
+              }
+            }
+          } catch (e) {
+            console.error("Gagal mendapatkan produk Tas Spunbond on-submit:", e);
+          }
+        }
+
+        let fallbackProductId = null;
+        if (!currentSpunbondProduct) {
+          try {
+            const { data } = await supabase
+              .from('products')
+              .select('id')
+              .eq('is_active', true)
+              .limit(1);
+            if (data && data.length > 0) {
+              fallbackProductId = data[0].id;
+            }
+          } catch (e) {
+            console.error("Gagal mendapatkan fallback product ID:", e);
+          }
+        }
+
         finalCartItems.push({
-          id: spunbondProduct.id,
+          id: currentSpunbondProduct ? currentSpunbondProduct.id : (fallbackProductId || '00000000-0000-0000-0000-000000000000'),
           nama: 'Tas Spunbond',
           harga: 5000,
           quantity: actualSpunbondQty,
@@ -1028,7 +1073,6 @@ export default function CheckoutPage({
     setReceiptItems([]);
     setSpunbondQuantity(0);
     setHotelOption('');
-    setCustomHotelName('');
 
     // Clear specific LocalStorage fields
     sessionStorage.setItem('dwp_bps_active_screen', 'checkout');
@@ -1064,7 +1108,6 @@ export default function CheckoutPage({
     setReceiptItems([]);
     setSpunbondQuantity(0);
     setHotelOption('');
-    setCustomHotelName('');
 
     // Clear specific sessionStorage fields
     sessionStorage.removeItem('dwp_bps_active_screen');
@@ -1297,6 +1340,14 @@ export default function CheckoutPage({
           ← Kembali ke Dashboard
         </button>
 
+        {/* Tas Spunbond Availability Warning/Notice */}
+        <div className="bg-[#FFFBF7] border border-amber-200/80 rounded-2xl p-4 text-xs font-semibold text-amber-800 flex items-center gap-2.5 shadow-3xs max-w-lg">
+          <span className="text-lg">🛍️</span>
+          <p className="leading-relaxed">
+            <strong>Info Penting:</strong> Tersedia <strong>Tas Spunbond (Rp 5.000 / pcs)</strong> untuk membawa belanjaan Anda. Silakan tentukan jumlah tas yang Anda butuhkan pada bagian rincian keranjang belanja di sebelah kanan sebelum menyelesaikan pemesanan.
+          </p>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* LEFT: Buyer Form */}
           <div className="lg:col-span-7 bg-white rounded-3xl border border-[#E8DCC4]/50 shadow-xs p-6 sm:p-8 space-y-6">
@@ -1340,7 +1391,6 @@ export default function CheckoutPage({
                       setReceiptItems([]);
                       setSpunbondQuantity(0);
                       setHotelOption('');
-                      setCustomHotelName('');
 
                       setRole('Guest');
                       localStorage.removeItem('user_role');
@@ -1628,11 +1678,7 @@ export default function CheckoutPage({
                           key={option}
                           onClick={() => {
                             setHotelOption(option);
-                            if (option !== 'Lainnya') {
-                              setHotel(option);
-                            } else {
-                              setHotel(customHotelName);
-                            }
+                            setHotel(option);
                             setShowHotelDropdown(false);
                           }}
                           className="px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-amber-50/70 hover:text-amber-900 cursor-pointer transition-colors"
@@ -1643,29 +1689,6 @@ export default function CheckoutPage({
                     </div>
                   )}
                 </div>
-
-                {/* Custom Hotel Input (Only if 'Lainnya' is chosen) */}
-                {hotelOption === 'Lainnya' && (
-                  <div className="space-y-1.5 animate-[fadeIn_0.2s_ease-out]">
-                    <label className="block text-xs font-bold text-[#A1887F]">Nama Hotel Lainnya <span className="text-rose-500">*</span></label>
-                    <div className="relative rounded-2xl border border-[#E5D3C0] bg-white focus-within:border-[#C19A6B] focus-within:ring-2 focus-within:ring-[#C19A6B]/15 transition-all flex items-center px-4 py-3">
-                      <svg className="w-4 h-4 text-[#A1887F] mr-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                      </svg>
-                      <input
-                        type="text"
-                        required
-                        placeholder="Ketik nama hotel Anda"
-                        value={customHotelName}
-                        onChange={(e) => {
-                          setCustomHotelName(e.target.value);
-                          setHotel(e.target.value);
-                        }}
-                        className="w-full text-xs font-semibold text-[#4A3222] bg-transparent outline-none border-none placeholder-[#A1887F]/75 p-0"
-                      />
-                    </div>
-                  </div>
-                )}
 
                 {/* Room */}
                 <div className="space-y-1.5">
@@ -2028,7 +2051,7 @@ export default function CheckoutPage({
       </div>
 
       {/* Camera Modal */}
-      {isCameraOpen && (
+      {isCameraOpen && role === 'Admin' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-xs">
           <div className="bg-[#FFFBF7] rounded-3xl border border-[#FFCBA4] p-5 sm:p-6 w-full max-w-lg shadow-2xl relative flex flex-col space-y-4 text-[#4A3222] font-sans">
             {/* Header */}
@@ -2099,51 +2122,6 @@ export default function CheckoutPage({
         </div>
       )}
 
-      {/* Spunbond Warning Modal */}
-      {isSpunbondWarningOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-xs">
-          <div className="bg-[#FFFBF7] rounded-3xl border border-[#FFCBA4] p-6 w-full max-w-sm shadow-2xl relative flex flex-col space-y-4 text-[#4A3222] font-sans text-center">
-            <div className="text-4xl">🛍️</div>
-            <h3 className="font-black text-base text-[#4A3222] tracking-wide">
-              Tambahkan Tas Spunbond?
-            </h3>
-            <p className="text-xs text-slate-500 font-semibold leading-relaxed">
-              Anda belum menambahkan Tas Spunbond (Rp 5.000) untuk membawa belanjaan Anda. Apakah Anda ingin menambahkannya sekarang?
-            </p>
-            
-            <div className="flex flex-col gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setSpunbondQuantity(1);
-                  setIsSpunbondWarningOpen(false);
-                  handleSubmitOrder(1);
-                }}
-                className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-colors cursor-pointer"
-              >
-                Ya, Tambahkan 1 Tas (+Rp 5.000)
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSpunbondWarningOpen(false);
-                  handleSubmitOrder(0);
-                }}
-                className="w-full py-3 bg-white border border-[#FFCBA4] text-[#4A3222] hover:bg-slate-50 font-extrabold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
-              >
-                Tidak, Lanjutkan Tanpa Tas
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsSpunbondWarningOpen(false)}
-                className="w-full py-2.5 text-slate-400 hover:text-slate-600 font-bold text-xs transition-colors cursor-pointer"
-              >
-                Batal
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

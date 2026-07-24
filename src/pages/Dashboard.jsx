@@ -84,14 +84,16 @@ export default function Dashboard() {
 
         if (error) throw error;
 
-        const dbProducts = (data || []).map((p) => ({
-          id: p.id,
-          nama: p.name,
-          harga: p.price,
-          kategori: p.category,
-          gambar: p.image_url,
-          stok: p.stock
-        }));
+        const dbProducts = (data || [])
+          .filter((p) => p.name && p.name.toLowerCase() !== 'tas spunbond')
+          .map((p) => ({
+            id: p.id,
+            nama: p.name,
+            harga: p.price,
+            kategori: p.category,
+            gambar: p.image_url,
+            stok: p.stock
+          }));
 
         setProducts(dbProducts);
       } catch (err) {
