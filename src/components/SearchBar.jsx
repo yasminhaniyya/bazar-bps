@@ -1,4 +1,4 @@
- 
+import { useRef } from 'react';
 
 export default function SearchBar({
   searchQuery = "",
@@ -7,6 +7,20 @@ export default function SearchBar({
   activeCategory = "Semua",
   onSelectCategory
 }) {
+  const scrollContainerRef = useRef(null);
+
+  const scrollLeft = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: -200, behavior: 'smooth' });
+    }
+  };
+
+  const scrollRight = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: 200, behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="bg-white p-4 rounded-lg border border-[#FFCBA4] shadow-xs space-y-3">
       {/* Search Input */}
@@ -35,16 +49,30 @@ export default function SearchBar({
 
       {/* Category Filter Pills */}
       {categories.length > 0 && (
-        <div className="flex flex-col space-y-2">
-          <span className="text-xs font-semibold text-[#3c2a1e]/60">Kategori:</span>
-          <div className="grid grid-cols-3 sm:flex sm:flex-wrap items-center gap-1.5 sm:gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <span className="text-xs font-semibold text-[#3c2a1e]/60 whitespace-nowrap hidden sm:block">Kategori:</span>
+          
+          <button 
+            onClick={scrollLeft}
+            className="p-1.5 rounded-full bg-[#FFFBF7] border border-[#FFCBA4] text-[#3c2a1e] hover:bg-[#FFCBA4]/30 shadow-sm flex-shrink-0 transition-colors"
+            aria-label="Geser ke kiri"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>
+          </button>
+
+          <div 
+            ref={scrollContainerRef}
+            className="flex flex-1 items-center gap-1.5 overflow-x-auto scrollbar-none py-1 scroll-smooth"
+            style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}
+          >
+            <span className="text-xs font-semibold text-[#3c2a1e]/60 whitespace-nowrap mr-1 sm:hidden">Kategori:</span>
             {categories.map((cat, idx) => {
               const isSelected = activeCategory === cat;
               return (
                 <button
                   key={idx}
                   onClick={() => onSelectCategory(cat)}
-                  className={`px-1.5 sm:px-4 py-1.5 rounded-full text-[10px] sm:text-xs font-bold whitespace-nowrap sm:whitespace-normal transition-colors border w-full sm:w-auto text-center overflow-hidden text-ellipsis ${
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors border flex-shrink-0 ${
                     isSelected
                       ? 'bg-[#FFCBA4] text-[#3c2a1e] border-[#F8C993]'
                       : 'bg-white text-[#3c2a1e]/70 border-[#FFCBA4]/60 hover:bg-[#FFCBA4]/30 hover:text-[#3c2a1e]'
@@ -55,6 +83,14 @@ export default function SearchBar({
               );
             })}
           </div>
+
+          <button 
+            onClick={scrollRight}
+            className="p-1.5 rounded-full bg-[#FFFBF7] border border-[#FFCBA4] text-[#3c2a1e] hover:bg-[#FFCBA4]/30 shadow-sm flex-shrink-0 transition-colors"
+            aria-label="Geser ke kanan"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+          </button>
         </div>
       )}
     </div>
