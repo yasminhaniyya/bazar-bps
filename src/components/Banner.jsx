@@ -18,20 +18,26 @@ export default function Banner({ isAdmin = false, onAddProduct }) {
         <div className="space-y-2 text-center w-full">
           <div className="max-w-4xl mx-auto">
             <div className="flex flex-col items-center gap-2">
-              <div className="flex items-center gap-2 justify-center">
+              <div className="flex items-center justify-center gap-4 mb-1 pr-2 sm:pr-4 md:pr-6">
+                <img
+                  src="/logo bps.png"
+                  alt="BPS logo"
+                  className="h-10 sm:h-14 md:h-16 lg:h-20 w-auto"
+                  style={{ maxWidth: '6rem', objectFit: 'contain' }}
+                />
                 <img
                   src="/logo-dwp.png"
                   alt="DWP logo"
-                  className="h-10 sm:h-14 md:h-16 lg:h-20 w-auto mr-2 sm:mr-4 md:mr-6"
-                  style={{ maxWidth: '6rem' }}
+                  className="h-10 sm:h-14 md:h-16 lg:h-20 w-auto"
+                  style={{ maxWidth: '6rem', objectFit: 'contain' }}
                 />
-
-                <h3 className="text-sm sm:text-base md:text-lg lg:text-xl font-extrabold leading-tight text-[#3c2a1e] text-center sm:whitespace-nowrap" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-                  DWP BPS PROVINSI JAWA TIMUR
-                </h3>
               </div>
 
-              <h2 className="text-lg sm:text-xl md:text-2xl lg:text-4xl font-bold leading-tight text-[#3c2a1e] -mt-2 sm:-mt-4" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+              <h3 className="text-sm sm:text-base md:text-lg lg:text-xl font-extrabold leading-tight text-[#3c2a1e] text-center sm:whitespace-nowrap mt-1" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                DWP BPS PROVINSI JAWA TIMUR
+              </h3>
+
+              <h2 className="text-lg sm:text-xl md:text-2xl lg:text-4xl font-bold leading-tight text-[#3c2a1e] -mt-1 sm:-mt-2" style={{ fontFamily: 'Montserrat, sans-serif' }}>
                 BAZAR
               </h2>
             </div>

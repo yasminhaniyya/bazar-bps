@@ -1,6 +1,3 @@
- 
-import bpsLogo from '../assets/bps-logo.svg';
-
 export default function Navbar({ role = "Guest", onToggleSidebar, onLoginClick, showSidebarToggle = true }) {
   return (
     <header className="sticky top-0 z-30 bg-white border-b border-[#FFCBA4]/60 shadow-xs w-full">
@@ -24,7 +21,7 @@ export default function Navbar({ role = "Guest", onToggleSidebar, onLoginClick, 
 
           <div className="flex items-center gap-3">
             <img
-              src={bpsLogo}
+              src="/logo bps.png"
               alt="Logo BPS"
               className="h-7 w-auto object-contain"
             />
