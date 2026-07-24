@@ -123,6 +123,20 @@ export default function Dashboard() {
       localStorage.removeItem('user_role');
     }
     setRole(activeRole);
+
+    // Hapus data belanja/checkout/receipt saat pertama kali membuka web / refresh web
+    // agar tamu baru atau admin tidak melihat data pesanan orang lain.
+    sessionStorage.removeItem('dwp_bps_cart');
+    sessionStorage.removeItem('dwp_bps_form_draft');
+    sessionStorage.removeItem('dwp_bps_payment_proof');
+    sessionStorage.removeItem('dwp_bps_active_screen');
+    sessionStorage.removeItem('dwp_bps_active_invoice');
+    sessionStorage.removeItem('dwp_bps_order_time');
+    sessionStorage.removeItem('dwp_bps_receipt_items');
+    sessionStorage.removeItem('dwp_bps_user_profile');
+    
+    setCart({});
+    setCurrentView('Home');
   }, []);
 
   const handleLogout = () => {

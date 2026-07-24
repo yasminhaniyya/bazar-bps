@@ -756,6 +756,7 @@ export default function CheckoutPage({
       // Since cart is passed from Dashboard, we can clear it using an event or prop,
       // but here we just clear the sessionStorage cart to sync with Dashboard.
       sessionStorage.removeItem('dwp_bps_cart');
+      onClearCart?.();
       
       setShowReceipt(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -831,6 +832,40 @@ export default function CheckoutPage({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Reset checkout and return to Home Dashboard from Receipt view
+  const handleBackToDashboardFromReceipt = () => {
+    // Reset States
+    setPanggilan('');
+    setNama('');
+    setWhatsapp('');
+    setSelectedProvince(null);
+    setSelectedCity(null);
+    setProvQuery('');
+    setCityQuery('');
+    setHotel('');
+    setKamar('');
+    resetFileUpload();
+    setIsAdminCashChecked(false);
+    setActivePaymentMethod('qris');
+    setReceiptItems([]);
+
+    // Clear specific sessionStorage fields
+    sessionStorage.removeItem('dwp_bps_active_screen');
+    sessionStorage.removeItem('dwp_bps_active_invoice');
+    sessionStorage.removeItem('dwp_bps_form_draft');
+    sessionStorage.removeItem('dwp_bps_payment_proof');
+    sessionStorage.removeItem('dwp_bps_order_time');
+    sessionStorage.removeItem('dwp_bps_receipt_items');
+    sessionStorage.removeItem('dwp_bps_cart');
+    sessionStorage.removeItem('dwp_bps_user_profile');
+
+    // Clear cart in parent Dashboard
+    onClearCart?.();
+
+    setShowReceipt(false);
+    onBackToDashboard?.();
+  };
+
   // Handle Admin cash toggle change
   const handleAdminCashChange = (e) => {
     const checked = e.target.checked;
@@ -879,7 +914,7 @@ export default function CheckoutPage({
         <div className="w-full max-w-md space-y-6">
           {/* Back navigation to Checkout */}
           <button
-            onClick={onBackToDashboard}
+            onClick={handleBackToDashboardFromReceipt}
             className="px-4 py-2 bg-white hover:bg-amber-50/30 text-[#4A3222] border border-[#FFCBA4] rounded-xl font-bold text-xs transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
           >
             ← Kembali ke Dashboard
