@@ -285,13 +285,19 @@ export default function CheckoutPage({
 
   // Spunbond Bag State
   const [spunbondProduct, setSpunbondProduct] = useState(null);
-  const [buySpunbondBag, setBuySpunbondBag] = useState(false);
+  const [spunbondQuantity, setSpunbondQuantity] = useState(0);
   const [isSpunbondWarningOpen, setIsSpunbondWarningOpen] = useState(false);
+
+  // Hotel Selection State
+  const hotelRef = useRef(null);
+  const [showHotelDropdown, setShowHotelDropdown] = useState(false);
+  const [hotelOption, setHotelOption] = useState('');
+  const [customHotelName, setCustomHotelName] = useState('');
 
   // Calculate pricing
   const subtotal = cartItems.reduce((acc, item) => acc + (item.harga * item.quantity), 0);
   const discount = 0; // Biarkan sesuai instruksi (diskon dinonaktifkan / 0)
-  const total = subtotal + (buySpunbondBag ? 5000 : 0) - discount;
+  const total = subtotal + (spunbondQuantity * 5000) - discount;
 
   const receiptSubtotal = receiptItems.reduce((acc, item) => acc + (item.harga * item.quantity), 0);
   const receiptTotal = receiptSubtotal - discount;
@@ -404,7 +410,18 @@ export default function CheckoutPage({
           if (draft.panggilan) setPanggilan(draft.panggilan);
           if (draft.nama) setNama(draft.nama);
           if (draft.whatsapp) setWhatsapp(draft.whatsapp);
-          if (draft.hotel) setHotel(draft.hotel);
+          if (draft.hotel) {
+            setHotel(draft.hotel);
+            if (draft.hotel === 'Wyndham Surabaya' || draft.hotel === 'JW Marriott Hotel Surabaya') {
+              setHotelOption(draft.hotel);
+            } else {
+              setHotelOption('Lainnya');
+              setCustomHotelName(draft.hotel);
+            }
+          }
+          if (draft.spunbondQuantity !== undefined) {
+            setSpunbondQuantity(draft.spunbondQuantity);
+          }
           if (draft.kamar) setKamar(draft.kamar);
           if (draft.notes) setNotes(draft.notes);
           if (draft.province) {
@@ -461,10 +478,11 @@ export default function CheckoutPage({
       notes,
       province: selectedProvince,
       city: selectedCity,
-      cashChecked: isAdminCashChecked
+      cashChecked: isAdminCashChecked,
+      spunbondQuantity
     };
     sessionStorage.setItem('dwp_bps_form_draft', JSON.stringify(draft));
-  }, [nama, whatsapp, hotel, kamar, notes, selectedProvince, selectedCity, isAdminCashChecked]);
+  }, [nama, whatsapp, hotel, kamar, notes, selectedProvince, selectedCity, isAdminCashChecked, spunbondQuantity]);
 
   // Click outside to close dropdown handlers
   useEffect(() => {
@@ -481,6 +499,9 @@ export default function CheckoutPage({
       }
       if (panggilanRef.current && !panggilanRef.current.contains(event.target)) {
         setShowPanggilanDropdown(false);
+      }
+      if (hotelRef.current && !hotelRef.current.contains(event.target)) {
+        setShowHotelDropdown(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -634,7 +655,15 @@ export default function CheckoutPage({
           if (profile.panggilan) setPanggilan(profile.panggilan);
           if (profile.nama) setNama(profile.nama);
           if (profile.whatsapp) setWhatsapp(profile.whatsapp);
-          if (profile.hotel) setHotel(profile.hotel);
+          if (profile.hotel) {
+            setHotel(profile.hotel);
+            if (profile.hotel === 'Wyndham Surabaya' || profile.hotel === 'JW Marriott Hotel Surabaya') {
+              setHotelOption(profile.hotel);
+            } else {
+              setHotelOption('Lainnya');
+              setCustomHotelName(profile.hotel);
+            }
+          }
           if (profile.kamar) setKamar(profile.kamar);
           if (profile.notes) setNotes(profile.notes);
           if (profile.province) {
@@ -760,8 +789,12 @@ export default function CheckoutPage({
       showToast('Pilih Kota / Kabupaten dari pilihan yang muncul!', 'error');
       return;
     }
-    if (!hotel.trim()) {
-      showToast('Nama Hotel wajib diisi!', 'error');
+    if (!hotelOption) {
+      showToast('Pilih Hotel Menginap!', 'error');
+      return;
+    }
+    if (hotelOption === 'Lainnya' && !customHotelName.trim()) {
+      showToast('Ketik nama hotel Anda!', 'error');
       return;
     }
     if (!kamar.trim()) {
@@ -781,7 +814,7 @@ export default function CheckoutPage({
     }
 
     // Check if Spunbond bag is selected. If not, trigger warning modal.
-    if (!buySpunbondBag) {
+    if (spunbondQuantity === 0) {
       setIsSpunbondWarningOpen(true);
     } else {
       handleSubmitOrder();
@@ -789,8 +822,8 @@ export default function CheckoutPage({
   };
 
   // Submit Order Action
-  const handleSubmitOrder = async (forceSpunbond = null) => {
-    const actualBuySpunbond = forceSpunbond !== null ? forceSpunbond : buySpunbondBag;
+  const handleSubmitOrder = async (forceSpunbondQty = null) => {
+    const actualSpunbondQty = forceSpunbondQty !== null ? forceSpunbondQty : spunbondQuantity;
 
     // Process payment loading
     setIsSubmitting(true);
@@ -843,12 +876,12 @@ export default function CheckoutPage({
 
       // Prepare final cart items list including Spunbond Bag if chosen
       let finalCartItems = [...cartItems];
-      if (actualBuySpunbond && spunbondProduct) {
+      if (actualSpunbondQty > 0 && spunbondProduct) {
         finalCartItems.push({
           id: spunbondProduct.id,
           nama: 'Tas Spunbond',
           harga: 5000,
-          quantity: 1,
+          quantity: actualSpunbondQty,
           stok: 99999
         });
       }
@@ -866,7 +899,7 @@ export default function CheckoutPage({
           room_number: kamar,
           payment_method: activePaymentMethod === 'cash' ? 'Cash' : 'Transfer',
           payment_proof: paymentProofUrl,
-          total_price: subtotal + (actualBuySpunbond ? 5000 : 0) - discount,
+          total_price: subtotal + (actualSpunbondQty * 5000) - discount,
           notes: notes
         })
         .select()
@@ -993,7 +1026,9 @@ export default function CheckoutPage({
     setIsAdminCashChecked(false);
     setActivePaymentMethod('qris');
     setReceiptItems([]);
-    setBuySpunbondBag(false);
+    setSpunbondQuantity(0);
+    setHotelOption('');
+    setCustomHotelName('');
 
     // Clear specific LocalStorage fields
     sessionStorage.setItem('dwp_bps_active_screen', 'checkout');
@@ -1027,7 +1062,9 @@ export default function CheckoutPage({
     setIsAdminCashChecked(false);
     setActivePaymentMethod('qris');
     setReceiptItems([]);
-    setBuySpunbondBag(false);
+    setSpunbondQuantity(0);
+    setHotelOption('');
+    setCustomHotelName('');
 
     // Clear specific sessionStorage fields
     sessionStorage.removeItem('dwp_bps_active_screen');
@@ -1301,7 +1338,9 @@ export default function CheckoutPage({
                       setIsAdminCashChecked(false);
                       setActivePaymentMethod('qris');
                       setReceiptItems([]);
-                      setBuySpunbondBag(false);
+                      setSpunbondQuantity(0);
+                      setHotelOption('');
+                      setCustomHotelName('');
 
                       setRole('Guest');
                       localStorage.removeItem('user_role');
@@ -1406,7 +1445,7 @@ export default function CheckoutPage({
                     className="w-full text-xs font-semibold text-[#4A3222] bg-transparent outline-none border-none placeholder-[#A1887F]/75 p-0"
                   />
                 </div>
-                <p className="text-[10px] text-[#A1887F] font-semibold leading-none pl-1">Digunakan untuk konfirmasi pesanan</p>
+                <p className="text-[8px] sm:text-[9px] text-[#A1887F]/80 font-medium leading-none pl-1">Digunakan untuk konfirmasi pesanan</p>
               </div>
 
               {/* Province & City selectors */}
@@ -1564,27 +1603,73 @@ export default function CheckoutPage({
 
               {/* Hotel & Room Number */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Hotel */}
-                <div className="space-y-1.5">
+                {/* Hotel Menginap Dropdown */}
+                <div className="space-y-1.5 relative" ref={hotelRef}>
                   <label className="block text-xs font-bold text-[#4A3222]">Hotel Menginap <span className="text-rose-500">*</span></label>
-                  <div className="relative rounded-2xl border border-[#E5D3C0] bg-white focus-within:border-[#C19A6B] focus-within:ring-2 focus-within:ring-[#C19A6B]/15 transition-all flex items-center px-4 py-3">
+                  <div
+                    onClick={() => setShowHotelDropdown(true)}
+                    className="relative rounded-2xl border border-[#E5D3C0] bg-white focus-within:border-[#C19A6B] focus-within:ring-2 focus-within:ring-[#C19A6B]/15 transition-all flex items-center px-4 py-3 cursor-pointer"
+                  >
                     <svg className="w-4 h-4 text-[#4A3222] mr-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Nama hotel/penginapan"
-                      value={hotel}
-                      onChange={(e) => setHotel(e.target.value)}
-                      className="w-full text-xs font-semibold text-[#4A3222] bg-transparent outline-none border-none placeholder-[#A1887F]/75 p-0"
-                    />
+                    <div className="w-full text-xs font-semibold text-[#4A3222] bg-transparent outline-none border-none placeholder-[#A1887F]/75 p-0">
+                      {hotelOption || 'Pilih Hotel'}
+                    </div>
+                    <svg className={`w-4 h-4 text-[#4A3222] transition-transform ${showHotelDropdown ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
                   </div>
+
+                  {showHotelDropdown && (
+                    <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-40 bg-white border border-slate-200 rounded-2xl shadow-lg divide-y divide-slate-100 py-1">
+                      {['Wyndham Surabaya', 'JW Marriott Hotel Surabaya', 'Lainnya'].map(option => (
+                        <div
+                          key={option}
+                          onClick={() => {
+                            setHotelOption(option);
+                            if (option !== 'Lainnya') {
+                              setHotel(option);
+                            } else {
+                              setHotel(customHotelName);
+                            }
+                            setShowHotelDropdown(false);
+                          }}
+                          className="px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-amber-50/70 hover:text-amber-900 cursor-pointer transition-colors"
+                        >
+                          {option}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
+
+                {/* Custom Hotel Input (Only if 'Lainnya' is chosen) */}
+                {hotelOption === 'Lainnya' && (
+                  <div className="space-y-1.5 animate-[fadeIn_0.2s_ease-out]">
+                    <label className="block text-xs font-bold text-[#A1887F]">Nama Hotel Lainnya <span className="text-rose-500">*</span></label>
+                    <div className="relative rounded-2xl border border-[#E5D3C0] bg-white focus-within:border-[#C19A6B] focus-within:ring-2 focus-within:ring-[#C19A6B]/15 transition-all flex items-center px-4 py-3">
+                      <svg className="w-4 h-4 text-[#A1887F] mr-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Ketik nama hotel Anda"
+                        value={customHotelName}
+                        onChange={(e) => {
+                          setCustomHotelName(e.target.value);
+                          setHotel(e.target.value);
+                        }}
+                        className="w-full text-xs font-semibold text-[#4A3222] bg-transparent outline-none border-none placeholder-[#A1887F]/75 p-0"
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {/* Room */}
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-[#4A3222]">Nomor Kamar <span className="text-rose-500">*</span></label>
+                  <label className="block text-xs font-bold text-[#4A3222]">Nomor Kamar <span className="text-rose-500">*</span> <span className="text-[8px] sm:text-[9px] text-slate-400 font-normal ml-1 inline-block align-middle">(jika tidak ada isi -)</span></label>
                   <div className="relative rounded-2xl border border-[#E5D3C0] bg-white focus-within:border-[#C19A6B] focus-within:ring-2 focus-within:ring-[#C19A6B]/15 transition-all flex items-center px-4 py-3">
                     <svg className="w-4 h-4 text-[#4A3222] mr-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m-2-2a2 2 0 00-2 2m2-2a2 2 0 002-2M9 12a3 3 0 11-6 0 3 3 0 016 0zm0 0h5m1.5 0h1.5m-3 0v3m3-3v3" />
@@ -1670,18 +1755,27 @@ export default function CheckoutPage({
                   <span className="text-2xl">🛍️</span>
                   <div className="space-y-0.5">
                     <p className="text-xs font-bold text-[#3c2a1e]">Beli Tas Spunbond</p>
-                    <p className="text-[10px] text-slate-500 font-semibold leading-relaxed">Membantu membawa belanjaan Anda (+Rp 5.000)</p>
+                    <p className="text-[10px] text-slate-500 font-semibold leading-relaxed">Rp 5.000 / pcs</p>
                   </div>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={buySpunbondBag}
-                    onChange={(e) => setBuySpunbondBag(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600"></div>
-                </label>
+                <div className="flex items-center gap-2.5 bg-white border border-[#FFCBA4] px-2.5 py-1 rounded-xl shadow-2xs">
+                  <button
+                    type="button"
+                    onClick={() => setSpunbondQuantity(prev => Math.max(0, prev - 1))}
+                    disabled={spunbondQuantity === 0}
+                    className="w-5 h-5 flex items-center justify-center font-bold text-amber-700 hover:bg-amber-50 active:bg-amber-100 disabled:opacity-30 rounded-md transition-colors text-sm cursor-pointer"
+                  >
+                    -
+                  </button>
+                  <span className="text-[#3c2a1e] font-extrabold min-w-4 text-center">{spunbondQuantity}</span>
+                  <button
+                    type="button"
+                    onClick={() => setSpunbondQuantity(prev => prev + 1)}
+                    className="w-5 h-5 flex items-center justify-center font-bold text-amber-700 hover:bg-amber-50 active:bg-amber-100 rounded-md transition-colors text-sm cursor-pointer"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
 
               <div className="border-t border-dashed border-[#E5D3C0] pt-4 space-y-2 text-xs font-semibold text-slate-500">
@@ -1689,10 +1783,10 @@ export default function CheckoutPage({
                   <span>Subtotal</span>
                   <span className="text-[#4A3222] font-bold">{formatRupiah(subtotal)}</span>
                 </div>
-                {buySpunbondBag && (
+                {spunbondQuantity > 0 && (
                   <div className="flex justify-between text-[#4A3222] font-bold">
-                    <span>Tas Spunbond</span>
-                    <span>{formatRupiah(5000)}</span>
+                    <span>Tas Spunbond ({spunbondQuantity}x)</span>
+                    <span>{formatRupiah(spunbondQuantity * 5000)}</span>
                   </div>
                 )}
                 {discount > 0 && (
@@ -2021,19 +2115,19 @@ export default function CheckoutPage({
               <button
                 type="button"
                 onClick={() => {
-                  setBuySpunbondBag(true);
+                  setSpunbondQuantity(1);
                   setIsSpunbondWarningOpen(false);
-                  handleSubmitOrder(true);
+                  handleSubmitOrder(1);
                 }}
                 className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-colors cursor-pointer"
               >
-                Ya, Tambahkan Tas (+Rp 5.000)
+                Ya, Tambahkan 1 Tas (+Rp 5.000)
               </button>
               <button
                 type="button"
                 onClick={() => {
                   setIsSpunbondWarningOpen(false);
-                  handleSubmitOrder(false);
+                  handleSubmitOrder(0);
                 }}
                 className="w-full py-3 bg-white border border-[#FFCBA4] text-[#4A3222] hover:bg-slate-50 font-extrabold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
               >
