@@ -240,6 +240,7 @@ export default function AddProductModal({ isOpen, onClose, onSubmit, onDelete, m
           <option value="Kue & Roti">Kue & Roti</option>
           <option value="Keripik">Keripik</option>
           <option value="Sambal">Sambal</option>
+          <option value="Batik">Batik</option>
         </select>
 
         <label className="block text-xs text-slate-600 mb-1">Harga Jual (IDR)</label>
