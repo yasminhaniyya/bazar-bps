@@ -20,7 +20,7 @@ export default function Banner({ isAdmin = false, onAddProduct }) {
       />
 >>>>>>> e2d0f74 (update API)
 
-      <div className="relative p-6 text-[#3c2a1e] flex flex-col items-center gap-6">
+      <div className="relative px-4 py-3 sm:p-6 text-[#3c2a1e] flex flex-col items-center gap-2 sm:gap-4">
         {/* Text Content */}
         <div className="space-y-2 text-center w-full">
           <div className="max-w-4xl mx-auto">
@@ -48,17 +48,19 @@ export default function Banner({ isAdmin = false, onAddProduct }) {
             </p>
           </div>
         </div>
-      </div>     {/* Admin action */}
-      {isAdmin && (
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsOpen(true)}
-            className="px-4 py-1.5 bg-[#D96A12] hover:bg-[#C95b0f] text-white font-semibold rounded-full shadow-sm"
-          >
-            + Tambah Barang
-          </button>
-        </div>
-      )}
+
+        {/* Admin action */}
+        {isAdmin && (
+          <div className="flex items-center justify-center mt-1 sm:mt-2">
+            <button
+              onClick={() => setIsOpen(true)}
+              className="px-3 sm:px-4 py-1 sm:py-1.5 bg-[#D96A12] hover:bg-[#C95b0f] text-white font-semibold text-xs sm:text-sm rounded-full shadow-sm"
+            >
+              + Tambah Barang
+            </button>
+          </div>
+        )}
+      </div>
 
       <AddProductModal
         isOpen={isOpen}
