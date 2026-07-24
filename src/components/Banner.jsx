@@ -9,7 +9,7 @@ export default function Banner({ isAdmin = false, onAddProduct }) {
       {/* banner overlay using admin button color at 40% opacity */}
       <div
         className="absolute inset-0 bg-[#D96A12]"
-        style={{ opacity: 0.4 }}
+        style={{ opacity: 0.3 }}
         aria-hidden
       />
 
@@ -22,7 +22,7 @@ export default function Banner({ isAdmin = false, onAddProduct }) {
                 <img
                   src="/logo bps.png"
                   alt="BPS logo"
-                  className="h-10 sm:h-14 md:h-16 lg:h-20 w-auto drop-shadow-[0_0_8px_rgba(255,255,255,0.85)]"
+                  className="h-10 sm:h-14 md:h-16 lg:h-20 w-auto"
                   style={{ maxWidth: '6rem', objectFit: 'contain' }}
                 />
                 <img
