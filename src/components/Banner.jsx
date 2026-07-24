@@ -43,7 +43,7 @@ export default function Banner({ isAdmin = false, onAddProduct }) {
             </div>
 
             <p className="text-xs sm:text-sm text-[#3c2a1e]/75 mt-2 leading-relaxed max-w-prose mx-auto">
-              Katalog makanan khas, kue kering, dan produk UMKM binaan Dharma Wanita.
+              Katalog makanan khas, kue kering, dan produk UMKM binaan DWP BPS Jawa Timur.
             </p>
           </div>
         </div>

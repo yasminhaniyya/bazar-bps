@@ -29,9 +29,6 @@ export default function Navbar({ role = "Guest", onToggleSidebar, onLoginClick, 
               <h1 className="text-[12px] sm:text-sm font-bold text-[#3c2a1e] leading-tight whitespace-nowrap">
                 Badan Pusat Statistik
               </h1>
-              <p className="text-[11px] text-[#3c2a1e]/70 hidden sm:block">
-                Dharma Wanita BPS Provinsi Jawa Timur
-              </p>
             </div>
           </div>
         </div>
