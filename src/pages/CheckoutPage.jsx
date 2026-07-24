@@ -276,6 +276,12 @@ export default function CheckoutPage({
   const fileInputRef = useRef(null);
   const cityInputRef = useRef(null);
 
+  // Camera State
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [cameraStream, setCameraStream] = useState(null);
+  const [cameraError, setCameraError] = useState(null);
+  const videoRef = useRef(null);
+
   // Calculate pricing
   const subtotal = cartItems.reduce((acc, item) => acc + (item.harga * item.quantity), 0);
   const discount = 0; // Biarkan sesuai instruksi (diskon dinonaktifkan / 0)
@@ -474,6 +480,104 @@ export default function CheckoutPage({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  // Handle Camera Stream Lifecycle (Locks to Back/Environment Camera)
+  useEffect(() => {
+    let activeStream = null;
+    if (isCameraOpen) {
+      const startCamera = async () => {
+        setCameraError(null);
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: { exact: 'environment' },
+              width: { ideal: 1280 },
+              height: { ideal: 720 }
+            },
+            audio: false
+          });
+          activeStream = stream;
+          setCameraStream(stream);
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+          }
+        } catch (err) {
+          console.warn("Gagal mengakses kamera belakang dengan facingMode exact environment, mencoba fallback environment:", err);
+          try {
+            // Fallback to standard environment facingMode if exact is not supported or fails
+            const stream = await navigator.mediaDevices.getUserMedia({
+              video: {
+                facingMode: 'environment',
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+              },
+              audio: false
+            });
+            activeStream = stream;
+            setCameraStream(stream);
+            if (videoRef.current) {
+              videoRef.current.srcObject = stream;
+            }
+          } catch (fallbackErr) {
+            console.error("Gagal mengakses kamera:", fallbackErr);
+            setCameraError("Tidak dapat mengakses kamera belakang. Pastikan Anda mengizinkan akses kamera di browser Anda.");
+          }
+        }
+      };
+      startCamera();
+    } else {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        setCameraStream(null);
+      }
+    }
+    return () => {
+      if (activeStream) {
+        activeStream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [isCameraOpen]);
+
+  const openCamera = () => {
+    setIsCameraOpen(true);
+  };
+
+  const closeCamera = () => {
+    setIsCameraOpen(false);
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+  };
+
+  const capturePhoto = () => {
+    if (!videoRef.current) return;
+    const video = videoRef.current;
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+    setPaymentProofPreview(dataUrl);
+    sessionStorage.setItem('dwp_bps_payment_proof', dataUrl);
+    
+    fetch(dataUrl)
+      .then(res => res.blob())
+      .then(blob => {
+        const file = new File([blob], `camera-bukti-bayar-${Date.now()}.jpg`, { type: 'image/jpeg' });
+        setPaymentProofFile(file);
+      })
+      .catch(err => {
+        console.error("Gagal mengubah foto ke file:", err);
+      });
+      
+    closeCamera();
+    showToast('Foto bukti pembayaran berhasil diambil!', 'success');
+  };
 
   // Autofill Action
   const handleAutofill = () => {
@@ -1643,19 +1747,46 @@ export default function CheckoutPage({
                             className="w-full h-full object-contain"
                           />
                         </div>
-                        <button
-                          type="button"
-                          onClick={resetFileUpload}
-                          className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-[10px] rounded-xl transition-colors shadow-2xs flex items-center gap-1"
-                        >
-                          Hapus Bukti
-                        </button>
+                        <div className="flex gap-2 w-full justify-center">
+                          <button
+                            type="button"
+                            onClick={resetFileUpload}
+                            className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-[10px] rounded-xl transition-colors shadow-2xs flex items-center gap-1 cursor-pointer"
+                          >
+                            Hapus Bukti
+                          </button>
+                          {role === 'Admin' && (
+                            <button
+                              type="button"
+                              onClick={openCamera}
+                              className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-[10px] rounded-xl transition-colors shadow-2xs flex items-center gap-1 cursor-pointer"
+                            >
+                              Ambil Foto Ulang
+                            </button>
+                          )}
+                        </div>
                       </div>
                     ) : (
                       <>
                         <svg className="w-10 h-10 text-amber-500 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                         <p className="text-xs font-bold text-slate-700">Klik untuk upload atau seret file ke sini</p>
-                        <p className="text-[9px] text-slate-400 font-semibold">Format: JPG, JPEG, PNG (Maks. 5MB)</p>
+                        <p className="text-[9px] text-slate-400 font-semibold mb-1">Format: JPG, JPEG, PNG (Maks. 5MB)</p>
+                        {role === 'Admin' && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openCamera();
+                            }}
+                            className="mt-2 py-2 px-4 bg-amber-50 border border-amber-300 text-amber-800 font-extrabold text-[10px] rounded-xl shadow-3xs hover:bg-amber-100 transition-colors flex items-center gap-1 cursor-pointer"
+                          >
+                            <svg className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            Ambil Foto Bukti via Kamera
+                          </button>
+                        )}
                       </>
                     )}
                   </div>
@@ -1686,6 +1817,78 @@ export default function CheckoutPage({
         </div>
       </div>
       </div>
+
+      {/* Camera Modal */}
+      {isCameraOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-xs">
+          <div className="bg-[#FFFBF7] rounded-3xl border border-[#FFCBA4] p-5 sm:p-6 w-full max-w-lg shadow-2xl relative flex flex-col space-y-4 text-[#4A3222] font-sans">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-[#FFCBA4]/20 pb-3">
+              <h3 className="font-black text-sm sm:text-base text-[#4A3222] tracking-wide flex items-center gap-1.5">
+                <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Ambil Foto Bukti Pembayaran
+              </h3>
+              <button
+                type="button"
+                onClick={closeCamera}
+                className="text-[#4A3222] hover:text-rose-600 font-bold transition-colors text-xl p-1 cursor-pointer"
+                title="Tutup Kamera"
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Video Feed Area */}
+            <div className="relative aspect-video rounded-2xl overflow-hidden bg-black border border-[#FFCBA4]/20 flex items-center justify-center">
+              {cameraError ? (
+                <div className="px-6 text-center text-rose-500 font-bold text-xs leading-relaxed space-y-2">
+                  <span className="text-2xl">⚠️</span>
+                  <p>{cameraError}</p>
+                </div>
+              ) : !cameraStream ? (
+                <div className="text-center text-slate-400 font-bold text-xs space-y-2 flex flex-col items-center">
+                  <div className="w-8 h-8 border-3 border-amber-600 border-t-transparent rounded-full animate-spin"></div>
+                  <span>Mengaktifkan kamera...</span>
+                </div>
+              ) : null}
+
+              {/* Video Element */}
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                className={`w-full h-full object-cover ${!cameraStream ? 'hidden' : ''}`}
+              />
+            </div>
+
+            {/* Camera Controls */}
+            <div className="flex items-center justify-center gap-6 pt-2">
+              {/* Cancel Button */}
+              <button
+                type="button"
+                onClick={closeCamera}
+                className="px-4 py-2 bg-white border border-[#FFCBA4] text-[#4A3222] font-bold text-xs rounded-xl hover:bg-slate-50 transition-colors flex items-center gap-1.5 cursor-pointer shadow-3xs"
+              >
+                Batal
+              </button>
+
+              {/* Shutter Button */}
+              <button
+                type="button"
+                disabled={!cameraStream}
+                onClick={capturePhoto}
+                className="w-14 h-14 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95 cursor-pointer border-4 border-white outline-4 outline-amber-600/35"
+                title="Ambil Foto"
+              >
+                <div className="w-5 h-5 rounded-full bg-white"></div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
