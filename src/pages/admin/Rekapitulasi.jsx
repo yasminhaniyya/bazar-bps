@@ -112,6 +112,90 @@ export default function Rekapitulasi() {
     void fetchData();
   }, [page, sortOrder, searchQuery]);
 
+  const exportToCSV = async () => {
+    try {
+      let query = supabase
+        .from('order_items')
+        .select(`
+          id,
+          quantity,
+          price,
+          subtotal,
+          orders!inner (
+            id,
+            ordered_at,
+            invoice_number,
+            buyer_name,
+            payment_method,
+            total_price,
+            notes
+          ),
+          products!inner (
+            name
+          )
+        `);
+
+      if (searchQuery) {
+        query = query.or(
+          `buyer_name.ilike.%${searchQuery}%,invoice_number.ilike.%${searchQuery}%`,
+          { referencedTable: 'orders' }
+        );
+      }
+
+      query = query.order('ordered_at', { referencedTable: 'orders', ascending: sortOrder === 'asc' });
+
+      const { data: exportData, error: exportError } = await query;
+      if (exportError) throw exportError;
+
+      let finalData = exportData || [];
+      if (searchQuery) {
+          const lowerQuery = searchQuery.toLowerCase();
+          finalData = finalData.filter(item => 
+              item.products.name.toLowerCase().includes(lowerQuery) ||
+              item.orders.buyer_name.toLowerCase().includes(lowerQuery) ||
+              item.orders.invoice_number.toLowerCase().includes(lowerQuery)
+          );
+      }
+
+      if (finalData.length === 0) {
+        alert('Tidak ada data untuk diexport');
+        return;
+      }
+
+      const headers = ['No', 'Tanggal Dipesan', 'Invoice', 'Nama Pembeli', 'Nama Produk', 'Harga Satuan', 'Jumlah', 'Total Harga', 'Metode Pembayaran', 'Catatan'];
+      const csvRows = [headers.join(',')];
+
+      finalData.forEach((item, index) => {
+        const row = [
+          index + 1,
+          `"${new Date(item.orders.ordered_at).toLocaleString('id-ID')}"`,
+          `"${item.orders.invoice_number}"`,
+          `"${item.orders.buyer_name}"`,
+          `"${item.products.name}"`,
+          item.price,
+          item.quantity,
+          item.subtotal,
+          `"${item.orders.payment_method}"`,
+          `"${(item.orders.notes || '').replace(/"/g, '""')}"`
+        ];
+        csvRows.push(row.join(','));
+      });
+
+      const csvContent = csvRows.join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `Rekapitulasi_Bazar_${new Date().getTime()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error("Error exporting to CSV:", err);
+      alert('Gagal mengekspor data ke CSV');
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('admin_session');
     window.location.href = '/admin/login';
@@ -132,12 +216,21 @@ export default function Rekapitulasi() {
         <h1 className="text-xl sm:text-2xl font-bold text-gray-800" style={{ fontFamily: 'Montserrat, sans-serif' }}>
           Rekapitulasi Pemesanan Bazar
         </h1>
-        <button 
-          onClick={handleLogout}
-          className="px-4 py-2 bg-red-50 text-red-600 font-medium rounded-lg hover:bg-red-100 transition-colors text-sm"
-        >
-          Keluar Admin
-        </button>
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+          <button 
+            onClick={exportToCSV}
+            className="px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium rounded-lg hover:bg-emerald-100 transition-colors text-sm flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+            Export CSV
+          </button>
+          <button 
+            onClick={handleLogout}
+            className="px-4 py-2 bg-red-50 text-red-600 font-medium rounded-lg hover:bg-red-100 transition-colors text-sm"
+          >
+            Keluar Admin
+          </button>
+        </div>
       </div>
 
       {error && (
