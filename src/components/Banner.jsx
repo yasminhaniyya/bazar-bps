@@ -22,7 +22,7 @@ export default function Banner({ isAdmin = false, onAddProduct }) {
                 <img
                   src="/logo bps.png"
                   alt="BPS logo"
-                  className="h-10 sm:h-14 md:h-16 lg:h-20 w-auto"
+                  className="h-10 sm:h-14 md:h-16 lg:h-20 w-auto drop-shadow-[0_0_8px_rgba(255,255,255,0.85)]"
                   style={{ maxWidth: '6rem', objectFit: 'contain' }}
                 />
                 <img
@@ -43,7 +43,7 @@ export default function Banner({ isAdmin = false, onAddProduct }) {
             </div>
 
             <p className="text-xs sm:text-sm text-[#3c2a1e]/75 mt-2 leading-relaxed max-w-prose mx-auto">
-              Katalog makanan khas, kue kering, dan produk UMKM binaan Dharma Wanita.
+              Katalog makanan khas, kue kering, dan produk UMKM binaan DWP BPS Provinsi Jawa Timur.
             </p>
           </div>
         </div>

@@ -60,7 +60,9 @@ export default function Dashboard() {
   const [notification, setNotification] = useState('');
 
   const categoryOptions = useMemo(() => {
-    const unique = Array.from(new Set(products.map((item) => item.kategori).filter(Boolean)));
+    const baseCategories = ['Kue & Roti', 'Keripik', 'Sambal', 'Batik'];
+    const fromProducts = products.map((item) => item.kategori).filter(Boolean);
+    const unique = Array.from(new Set([...baseCategories, ...fromProducts]));
     return ['Semua', ...unique];
   }, [products]);
 
