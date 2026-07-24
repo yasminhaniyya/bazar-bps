@@ -35,24 +35,26 @@ export default function SearchBar({
 
       {/* Category Filter Pills */}
       {categories.length > 0 && (
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-          <span className="text-xs font-semibold text-[#3c2a1e]/60 whitespace-nowrap mr-1">Kategori:</span>
-          {categories.map((cat, idx) => {
-            const isSelected = activeCategory === cat;
-            return (
-              <button
-                key={idx}
-                onClick={() => onSelectCategory(cat)}
-                className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors border ${
-                  isSelected
-                    ? 'bg-[#FFCBA4] text-[#3c2a1e] border-[#F8C993]'
-                    : 'bg-white text-[#3c2a1e]/70 border-[#FFCBA4]/60 hover:bg-[#FFCBA4]/30 hover:text-[#3c2a1e]'
-                }`}
-              >
-                {cat}
-              </button>
-            );
-          })}
+        <div className="flex flex-col space-y-2">
+          <span className="text-xs font-semibold text-[#3c2a1e]/60">Kategori:</span>
+          <div className="grid grid-cols-3 sm:flex sm:flex-wrap items-center gap-1.5 sm:gap-2">
+            {categories.map((cat, idx) => {
+              const isSelected = activeCategory === cat;
+              return (
+                <button
+                  key={idx}
+                  onClick={() => onSelectCategory(cat)}
+                  className={`px-1.5 sm:px-4 py-1.5 rounded-full text-[10px] sm:text-xs font-bold whitespace-nowrap sm:whitespace-normal transition-colors border w-full sm:w-auto text-center overflow-hidden text-ellipsis ${
+                    isSelected
+                      ? 'bg-[#FFCBA4] text-[#3c2a1e] border-[#F8C993]'
+                      : 'bg-white text-[#3c2a1e]/70 border-[#FFCBA4]/60 hover:bg-[#FFCBA4]/30 hover:text-[#3c2a1e]'
+                  }`}
+                >
+                  {cat}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
