@@ -82,6 +82,25 @@ export default function Sidebar({
                   <span>Rekap Barang</span>
                 </button>
               )}
+
+              {role === "Admin" && (
+                <button
+                  onClick={() => {
+                    onSelectTab("Edit Barang");
+                    onClose();
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-semibold transition-colors ${
+                    activeTab === "Edit Barang"
+                    ? 'bg-[#FFCBA4] text-[#3c2a1e] border border-[#F8C993]'
+                    : 'text-[#3c2a1e]/80 hover:bg-[#FFCBA4]/30 hover:text-[#3c2a1e]'
+                  }`}
+                >
+                  <svg className="w-5 h-5 text-current" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5h6a2 2 0 012 2v10a2 2 0 01-2 2h-6m-4 0H5a2 2 0 01-2-2V7a2 2 0 012-2h2m6 0V3m0 2h4" />
+                  </svg>
+                  <span>Edit Barang</span>
+                </button>
+              )}
             </nav>
           </div>
         </div>

@@ -8,6 +8,7 @@ import BottomCheckout from '../components/BottomCheckout';
 import RekapPage from './RekapPage';
 import CheckoutPage from './CheckoutPage';
 import LoginModal from '../components/LoginModal';
+import AddProductModal from '../components/AddProductModal';
 import { supabase } from '../lib/supabase';
 
 export default function Dashboard() {
@@ -52,6 +53,8 @@ export default function Dashboard() {
     }
   }, [currentView]);
   const [products, setProducts] = useState([]);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [notification, setNotification] = useState('');
@@ -236,6 +239,30 @@ export default function Dashboard() {
     setNotification('Berhasil! Produk telah ditambahkan ke etalase.');
   };
 
+  const handleEditProductSubmit = (data) => {
+    setProducts((prev) => prev.map((product) => product.id === data.id ? {
+      ...product,
+      nama: data.nama,
+      harga: Number(data.harga) || 0,
+      kategori: data.kategori,
+      gambar: data.gambarPreview || product.gambar,
+      stok: Number(data.stock) || 0
+    } : product));
+    setNotification('Berhasil! Produk telah diperbarui.');
+  };
+
+  const handleDeleteProduct = (productId) => {
+    setProducts((prev) => prev.filter((product) => product.id !== productId));
+    setSelectedProduct(null);
+    setEditModalOpen(false);
+    setNotification('Produk berhasil dihapus.');
+  };
+
+  const openEditProduct = (product) => {
+    setSelectedProduct(product);
+    setEditModalOpen(true);
+  };
+
   const cartItemList = Object.values(cart);
 
   // Render Checkout Page
@@ -312,55 +339,144 @@ export default function Dashboard() {
       {/* Main Full-Width Content Container */}
       <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6">
         <main className="w-full space-y-6">
-          {/* 2. Banner */}
-          <Banner isAdmin={role === 'Admin'} onAddProduct={handleAddProductSubmit} />
+          {currentView === 'Edit Barang' ? (
+            <>
+              <div className="rounded-xl border border-[#F8C993]/80 bg-white/90 p-6 shadow-sm">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h1 className="text-xl font-bold text-[#3c2a1e]">Edit Barang</h1>
+                    <p className="text-sm text-[#3c2a1e]/75 mt-1">Kelola produk dan perbarui detail barang yang tersedia di bazar.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCurrentView('Home');
+                      setSelectedProduct(null);
+                    }}
+                    className="inline-flex items-center gap-2 rounded-full border border-[#E67E22] bg-white px-4 py-2 text-sm font-semibold text-[#E67E22] hover:bg-[#E67E22]/10 transition-colors"
+                  >
+                    Kembali ke Dashboard
+                  </button>
+                </div>
+              </div>
 
-          {/* 3. Search Bar */}
-          <SearchBar
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            categories={categoryOptions}
-            activeCategory={activeCategory}
-            onSelectCategory={setActiveCategory}
-          />
+              <SearchBar
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                categories={categoryOptions}
+                activeCategory={activeCategory}
+                onSelectCategory={setActiveCategory}
+              />
 
-          {/* Grid Header */}
-          <div className="flex items-center justify-between pt-1">
-            <h2 className="text-sm sm:text-base font-bold text-slate-800">
-              {activeCategory === "Semua" ? "Daftar Produk Bazar" : `Kategori: ${activeCategory}`}
-            </h2>
-            <span className="text-xs text-slate-500 font-medium bg-white px-2.5 py-1 rounded border border-slate-200">
-              {filteredProducts.length} Produk
-            </span>
-          </div>
+              <div className="flex items-center justify-between pt-1">
+                <h2 className="text-sm sm:text-base font-bold text-slate-800">
+                  {activeCategory === 'Semua' ? 'Daftar Produk untuk Edit' : `Kategori: ${activeCategory}`}
+                </h2>
+                <span className="text-xs text-slate-500 font-medium bg-white px-2.5 py-1 rounded border border-slate-200">
+                  {filteredProducts.length} Produk
+                </span>
+              </div>
 
-          {/* 4. Product Grid (Responsive Full Width: HP -> 2 kolom, Tablet -> 3 kolom, Laptop -> 4/5 kolom) */}
-          {filteredProducts.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
-              {filteredProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  quantity={cart[product.id]?.quantity || 0}
-                  onAddToCart={handleAddToCart}
-                  onRemoveFromCart={handleRemoveFromCart}
-                />
-              ))}
-            </div>
+              {filteredProducts.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+                  {filteredProducts.map((product) => (
+                    <div key={product.id} className="bg-white rounded-lg border border-slate-200 shadow-xs hover:shadow-sm transition-shadow overflow-hidden flex flex-col justify-between">
+                      <div className="relative aspect-4/3 w-full bg-slate-100 overflow-hidden">
+                        <img src={product.gambar} alt={product.nama} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="p-3 flex-1 flex flex-col justify-between space-y-2">
+                        <div>
+                          <h3 className="font-semibold text-slate-800 text-xs sm:text-sm leading-snug line-clamp-2 min-h-[2.25rem]">
+                            {product.nama}
+                          </h3>
+                          <p className="text-sm sm:text-base font-bold text-[#D96A12] mt-1">
+                            Rp {new Intl.NumberFormat('id-ID').format(product.harga)}
+                          </p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
+                          <span>Kategori: {product.kategori}</span>
+                          <span>Stok: {product.stok}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => openEditProduct(product)}
+                          className="w-full py-1.5 px-3 bg-[#E67E22] hover:bg-[#D96A12] text-white font-medium text-xs rounded transition-colors"
+                        >
+                          Edit Produk
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-white rounded-lg p-8 text-center border border-slate-200 shadow-xs">
+                  <p className="text-sm font-semibold text-slate-800">Produk Tidak Ditemukan</p>
+                  <p className="text-xs text-slate-500 mt-1">Coba kata kunci atau kategori lainnya.</p>
+                  <button
+                    onClick={() => {
+                      setSearchQuery('');
+                      setActiveCategory('Semua');
+                    }}
+                    className="mt-3 px-3 py-1.5 bg-[#E67E22] hover:bg-[#D96A12] text-white font-medium text-xs rounded"
+                  >
+                    Reset Pencarian
+                  </button>
+                </div>
+              )}
+            </>
           ) : (
-            <div className="bg-white rounded-lg p-8 text-center border border-slate-200 shadow-xs">
-              <p className="text-sm font-semibold text-slate-800">Produk Tidak Ditemukan</p>
-              <p className="text-xs text-slate-500 mt-1">Coba kata kunci atau kategori lainnya.</p>
-              <button
-                onClick={() => {
-                  setSearchQuery("");
-                  setActiveCategory("Semua");
-                }}
-                className="mt-3 px-3 py-1.5 bg-[#E67E22] hover:bg-[#D96A12] text-white font-medium text-xs rounded"
-              >
-                Reset Pencarian
-              </button>
-            </div>
+            <>
+              {/* 2. Banner */}
+              <Banner isAdmin={role === 'Admin'} onAddProduct={handleAddProductSubmit} />
+
+              {/* 3. Search Bar */}
+              <SearchBar
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                categories={categoryOptions}
+                activeCategory={activeCategory}
+                onSelectCategory={setActiveCategory}
+              />
+
+              {/* Grid Header */}
+              <div className="flex items-center justify-between pt-1">
+                <h2 className="text-sm sm:text-base font-bold text-slate-800">
+                  {activeCategory === "Semua" ? "Daftar Produk Bazar" : `Kategori: ${activeCategory}`}
+                </h2>
+                <span className="text-xs text-slate-500 font-medium bg-white px-2.5 py-1 rounded border border-slate-200">
+                  {filteredProducts.length} Produk
+                </span>
+              </div>
+
+              {/* 4. Product Grid (Responsive Full Width: HP -> 2 kolom, Tablet -> 3 kolom, Laptop -> 4/5 kolom) */}
+              {filteredProducts.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+                  {filteredProducts.map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      quantity={cart[product.id]?.quantity || 0}
+                      onAddToCart={handleAddToCart}
+                      onRemoveFromCart={handleRemoveFromCart}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-white rounded-lg p-8 text-center border border-slate-200 shadow-xs">
+                  <p className="text-sm font-semibold text-slate-800">Produk Tidak Ditemukan</p>
+                  <p className="text-xs text-slate-500 mt-1">Coba kata kunci atau kategori lainnya.</p>
+                  <button
+                    onClick={() => {
+                      setSearchQuery("");
+                      setActiveCategory("Semua");
+                    }}
+                    className="mt-3 px-3 py-1.5 bg-[#E67E22] hover:bg-[#D96A12] text-white font-medium text-xs rounded"
+                  >
+                    Reset Pencarian
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </main>
       </div>
@@ -371,7 +487,19 @@ export default function Dashboard() {
         onCheckout={handleGoToCheckout}
         onClearCart={handleClearCart}
       />
-      </div>
+
+      <AddProductModal
+        isOpen={editModalOpen}
+        onClose={() => {
+          setEditModalOpen(false);
+          setSelectedProduct(null);
+        }}
+        onSubmit={handleEditProductSubmit}
+        onDelete={handleDeleteProduct}
+        mode="edit"
+        initialProduct={selectedProduct}
+      />
     </div>
+  </div>
   );
 }
