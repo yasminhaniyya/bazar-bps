@@ -58,18 +58,13 @@ export default function RekapPage({ onBackToDashboard }) {
           )
         `);
 
-      if (searchQuery) {
-        query = query.or(
-          `buyer_name.ilike.%${searchQuery}%,invoice_number.ilike.%${searchQuery}%`,
-          { referencedTable: 'orders' }
-        );
-      }
-
       query = query.order('ordered_at', { referencedTable: 'orders', ascending: sortOrder === 'asc' });
 
-      const from = (page - 1) * itemsPerPage;
-      const to = from + itemsPerPage - 1;
-      query = query.range(from, to);
+      if (!searchQuery) {
+        const from = (page - 1) * itemsPerPage;
+        const to = from + itemsPerPage - 1;
+        query = query.range(from, to);
+      }
 
       const { data: resultData, error: dbError } = await query;
       if (dbError) throw dbError;
@@ -82,6 +77,9 @@ export default function RekapPage({ onBackToDashboard }) {
               item.orders.buyer_name.toLowerCase().includes(lowerQuery) ||
               item.orders.invoice_number.toLowerCase().includes(lowerQuery)
           );
+          
+          const from = (page - 1) * itemsPerPage;
+          finalData = finalData.slice(from, from + itemsPerPage);
       }
 
       setData(finalData);
@@ -145,13 +143,6 @@ export default function RekapPage({ onBackToDashboard }) {
             name
           )
         `);
-
-      if (searchQuery) {
-        query = query.or(
-          `buyer_name.ilike.%${searchQuery}%,invoice_number.ilike.%${searchQuery}%`,
-          { referencedTable: 'orders' }
-        );
-      }
 
       query = query.order('ordered_at', { referencedTable: 'orders', ascending: sortOrder === 'asc' });
 
