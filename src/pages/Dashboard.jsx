@@ -469,6 +469,11 @@ export default function Dashboard() {
               {/* 2. Banner */}
               <Banner isAdmin={role === 'Admin'} onAddProduct={handleAddProductSubmit} />
 
+              {/* Warning Bar */}
+              <div className="w-full bg-[#f1c40f] text-yellow-900 px-4 py-3 rounded-lg text-center text-sm font-bold shadow-sm border border-[#f39c12]/20">
+                PERINGATAN: Hari terakhir pemesanan yaitu pada hari ini, Senin 27 Juli 2026 jam 15.00 WIB
+              </div>
+
               {/* 3. Search Bar */}
               <SearchBar
                 searchQuery={searchQuery}

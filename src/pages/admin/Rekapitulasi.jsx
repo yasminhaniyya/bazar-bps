@@ -224,6 +224,11 @@ export default function Rekapitulasi() {
         </div>
       </div>
 
+      {/* Warning Bar */}
+      <div className="w-full bg-[#f1c40f] text-yellow-900 px-4 py-3 rounded-lg text-center text-sm font-bold shadow-sm mb-6 border border-[#f39c12]/20">
+        PERINGATAN: Hari terakhir pemesanan yaitu pada hari ini, Senin tanggal 27 Juli 2026 jam 15.00 WIB
+      </div>
+
       {error && (
         <div className="mb-6 p-4 bg-red-100 text-red-700 rounded-lg">
           Error: {error}
