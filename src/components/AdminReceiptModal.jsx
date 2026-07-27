@@ -33,7 +33,31 @@ export default function AdminReceiptModal({ isOpen, onClose, invoiceData }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 overflow-y-auto">
+    <>
+      <style>
+        {`
+          @media print {
+            @page { size: A6; margin: 5mm; }
+            body * { visibility: hidden !important; }
+            #admin-receipt-card-element, #admin-receipt-card-element * { visibility: visible !important; }
+            #admin-receipt-card-element {
+              position: fixed !important;
+              left: 0 !important;
+              top: 0 !important;
+              width: 100% !important;
+              max-width: 100% !important;
+              height: auto !important;
+              box-shadow: none !important;
+              border: none !important;
+              border-radius: 0 !important;
+              background: white !important;
+              margin: 0 !important;
+              padding: 5mm !important;
+            }
+          }
+        `}
+      </style>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 overflow-y-auto print:bg-transparent">
       <div className="relative w-full max-w-md bg-[#FDF6F0] rounded-3xl overflow-hidden shadow-2xl my-8">
         
         {/* Latar Belakang Batik Modal */}
@@ -155,12 +179,22 @@ export default function AdminReceiptModal({ isOpen, onClose, invoiceData }) {
             </div>
           </div>
 
-          {/* Download Action */}
-          <div className="w-full mt-6 flex justify-center">
+          {/* Download & Print Action */}
+          <div className="w-full mt-6 flex flex-col sm:flex-row justify-center gap-3">
+            <button
+              onClick={() => window.print()}
+              className="w-full sm:w-auto px-8 py-3.5 bg-[#D97736] hover:bg-[#c26a2f] text-white font-extrabold text-sm rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 cursor-pointer print:hidden"
+            >
+              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+              </svg>
+              Cetak A6
+            </button>
+
             <button
               onClick={handleDownloadJpg}
               disabled={isProcessing}
-              className="w-full sm:w-auto px-8 py-3.5 bg-[#4A3222] hover:bg-[#3d2719] text-white font-extrabold text-sm rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              className="w-full sm:w-auto px-8 py-3.5 bg-[#4A3222] hover:bg-[#3d2719] text-white font-extrabold text-sm rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 print:hidden"
             >
               {isProcessing ? 'Memproses...' : (
                 <>
@@ -176,5 +210,6 @@ export default function AdminReceiptModal({ isOpen, onClose, invoiceData }) {
         </div>
       </div>
     </div>
+    </>
   );
 }

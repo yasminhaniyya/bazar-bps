@@ -13,9 +13,10 @@ export default function Rekapitulasi() {
   const [error, setError] = useState(null);
   
   // State untuk Filter, Sort, Search, Pagination
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortOrder, setSortOrder] = useState('desc'); 
   const [page, setPage] = useState(1);
+  const [sortOrder, setSortOrder] = useState('desc');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [pickupFilter, setPickupFilter] = useState('all');
   const itemsPerPage = 10;
   
   // State Summary (Card di atas)
@@ -24,120 +25,130 @@ export default function Rekapitulasi() {
   // Modal State
   const [selectedInvoice, setSelectedInvoice] = useState(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        // 1. Query Join order_items dengan orders dan products menggunakan inner join
-        let query = supabase
-          .from('order_items')
-          .select(`
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // 1. Query Join order_items dengan orders dan products menggunakan inner join
+      let query = supabase
+        .from('order_items')
+        .select(`
+          id,
+          quantity,
+          price,
+          subtotal,
+          is_picked_up,
+          orders!inner (
             id,
-            quantity,
-            price,
-            subtotal,
-            orders!inner (
-              id,
-              ordered_at,
-              invoice_number,
-              buyer_name,
-              payment_method,
-              total_price,
-              notes,
-              phone,
-              province,
-              city,
-              hotel,
-              room_number
-            ),
-            products!inner (
-              name
-            )
-          `);
+            ordered_at,
+            invoice_number,
+            buyer_name,
+            payment_method,
+            total_price,
+            notes,
+            phone,
+            province,
+            city,
+            hotel,
+            room_number
+          ),
+          products!inner (
+            name
+          )
+        `);
 
-        // 4. Sorting
-        query = query.order('ordered_at', { referencedTable: 'orders', ascending: sortOrder === 'asc' });
+      // 4. Sorting
+      query = query.order('ordered_at', { referencedTable: 'orders', ascending: sortOrder === 'asc' });
 
-        // 5. Pagination
-        if (!searchQuery) {
-          const from = (page - 1) * itemsPerPage;
-          const to = from + itemsPerPage - 1;
-          query = query.range(from, to);
-        }
-
-        const { data: resultData, error: dbError } = await query;
-
-        if (dbError) throw dbError;
-        
-        let finalData = resultData || [];
-        if (searchQuery) {
-            const lowerQuery = searchQuery.toLowerCase();
-            finalData = finalData.filter(item => 
-                item.products.name.toLowerCase().includes(lowerQuery) ||
-                item.orders.buyer_name.toLowerCase().includes(lowerQuery) ||
-                item.orders.invoice_number.toLowerCase().includes(lowerQuery)
-            );
-            
-            // Client-side pagination
-            const from = (page - 1) * itemsPerPage;
-            finalData = finalData.slice(from, from + itemsPerPage);
-        }
-
-        // Compute rowSpans for current page
-        let invoiceCounts = {};
-        finalData.forEach(item => {
-           let inv = item.orders.invoice_number;
-           invoiceCounts[inv] = (invoiceCounts[inv] || 0) + 1;
-        });
-
-        let currentInv = null;
-        let invoiceCounter = 0;
-        let processedData = finalData.map(item => {
-           let inv = item.orders.invoice_number;
-           if (inv !== currentInv) {
-               currentInv = inv;
-               invoiceCounter++;
-               return { ...item, isFirstInInvoice: true, rowSpanCount: invoiceCounts[inv], invoiceIndex: invoiceCounter };
-           } else {
-               return { ...item, isFirstInInvoice: false, invoiceIndex: invoiceCounter };
-           }
-        });
-
-        setData(processedData);
-
-        // Summary fetch inline to avoid missing dependency warning
-        let summaryQuery = supabase.from('order_items').select('quantity, subtotal, orders!inner(id)');
-
-        const { data: sumData, error: sumError } = await summaryQuery;
-        if (sumData && !sumError) {
-          const uniqueOrders = new Set();
-          let revenue = 0;
-          let productsSold = 0;
-
-          sumData.forEach(item => {
-            uniqueOrders.add(item.orders.id);
-            revenue += item.subtotal;
-            productsSold += item.quantity;
-          });
-
-          setSummary({
-            totalTx: uniqueOrders.size,
-            totalRevenue: revenue,
-            totalProducts: productsSold
-          });
-        }
-
-      } catch (err) {
-        console.error("Error fetching data:", err);
-        setError(err.message || 'Gagal memuat data');
-      } finally {
-        setLoading(false);
+      // 5. Pagination
+      if (!searchQuery && pickupFilter === 'all') {
+        const from = (page - 1) * itemsPerPage;
+        const to = from + itemsPerPage - 1;
+        query = query.range(from, to);
       }
-    };
 
-    void fetchData();
-  }, [page, sortOrder, searchQuery]);
+      const { data: resultData, error: dbError } = await query;
+
+      if (dbError) throw dbError;
+      
+      let finalData = resultData || [];
+
+      if (pickupFilter !== 'all') {
+          finalData = finalData.filter(item => 
+              pickupFilter === 'picked' ? !!item.is_picked_up : !item.is_picked_up
+          );
+      }
+
+      if (searchQuery) {
+          const lowerQuery = searchQuery.toLowerCase();
+          finalData = finalData.filter(item => 
+              item.products.name.toLowerCase().includes(lowerQuery) ||
+              item.orders.buyer_name.toLowerCase().includes(lowerQuery) ||
+              item.orders.invoice_number.toLowerCase().includes(lowerQuery)
+          );
+      }
+      
+      if (searchQuery || pickupFilter !== 'all') {
+          // Client-side pagination
+          const from = (page - 1) * itemsPerPage;
+          finalData = finalData.slice(from, from + itemsPerPage);
+      }
+
+      // Compute rowSpans for current page
+      let invoiceCounts = {};
+      finalData.forEach(item => {
+         let inv = item.orders.invoice_number;
+         invoiceCounts[inv] = (invoiceCounts[inv] || 0) + 1;
+      });
+
+      let currentInv = null;
+      let invoiceCounter = 0;
+      let processedData = finalData.map(item => {
+         let inv = item.orders.invoice_number;
+         if (inv !== currentInv) {
+             currentInv = inv;
+             invoiceCounter++;
+             return { ...item, isFirstInInvoice: true, rowSpanCount: invoiceCounts[inv], invoiceIndex: invoiceCounter };
+         } else {
+             return { ...item, isFirstInInvoice: false, invoiceIndex: invoiceCounter };
+         }
+      });
+
+      setData(processedData);
+
+      // Summary fetch inline to avoid missing dependency warning
+      let summaryQuery = supabase.from('order_items').select('quantity, subtotal, orders!inner(id)');
+
+      const { data: sumData, error: sumError } = await summaryQuery;
+      if (sumData && !sumError) {
+        const uniqueOrders = new Set();
+        let revenue = 0;
+        let productsSold = 0;
+
+        sumData.forEach(item => {
+          uniqueOrders.add(item.orders.id);
+          revenue += item.subtotal;
+          productsSold += item.quantity;
+        });
+
+        setSummary({
+          totalTx: uniqueOrders.size,
+          totalRevenue: revenue,
+          totalProducts: productsSold
+        });
+      }
+
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      setError(err.message || 'Gagal memuat data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [page, sortOrder, searchQuery, pickupFilter]);
 
   const exportToCSV = async () => {
     try {
@@ -224,6 +235,23 @@ export default function Rekapitulasi() {
   const handleLogout = () => {
     localStorage.removeItem('admin_session');
     window.location.href = '/admin/login';
+  };
+
+  const handleTogglePickUp = async (orderItemId, currentValue) => {
+    try {
+      const { error } = await supabase
+        .from('order_items')
+        .update({ is_picked_up: !currentValue })
+        .eq('id', orderItemId);
+      if (error) throw error;
+      
+      setData(prevData => prevData.map(item => 
+        item.id === orderItemId ? { ...item, is_picked_up: !currentValue } : item
+      ));
+    } catch (err) {
+      console.error('Error toggling pick up status:', err);
+      alert('Gagal mengupdate status pengambilan (pastikan kolom is_picked_up sudah ada di database)');
+    }
   };
 
   const handleOpenReceipt = (order) => {
@@ -344,6 +372,17 @@ export default function Rekapitulasi() {
         />
 
         <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+          {/* Pickup Filter */}
+          <select 
+            className="w-full sm:w-auto px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900"
+            value={pickupFilter}
+            onChange={(e) => { setPickupFilter(e.target.value); setPage(1); }}
+          >
+            <option value="all">Semua Status</option>
+            <option value="picked">Sudah Diambil</option>
+            <option value="not_picked">Belum Diambil</option>
+          </select>
+
           {/* Sort */}
           <select 
             className="w-full sm:w-auto px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900"
@@ -366,6 +405,7 @@ export default function Rekapitulasi() {
               <th className="p-4 font-semibold whitespace-nowrap">Invoice</th>
               <th className="p-4 font-semibold whitespace-nowrap">Nama Pembeli</th>
               <th className="p-4 font-semibold whitespace-nowrap">Nama Produk</th>
+              <th className="p-4 font-semibold text-center whitespace-nowrap">Sudah Diambil</th>
               <th className="p-4 font-semibold text-right whitespace-nowrap">Harga Satuan</th>
               <th className="p-4 font-semibold text-center whitespace-nowrap">Jml</th>
               <th className="p-4 font-semibold text-right whitespace-nowrap">Subtotal Item</th>
@@ -391,7 +431,18 @@ export default function Rekapitulasi() {
                       <td className="p-4 whitespace-nowrap align-top" rowSpan={item.rowSpanCount}>{item.orders.buyer_name}</td>
                     </>
                   )}
-                  <td className="p-4 min-w-[200px]">{item.products.name}</td>
+                  <td className="p-4 min-w-[200px]">
+                    <span className={item.is_picked_up ? "line-through text-gray-400" : ""}>{item.products.name}</span>
+                  </td>
+                  <td className="p-4 text-center">
+                    <input 
+                      type="checkbox" 
+                      checked={!!item.is_picked_up} 
+                      onChange={() => handleTogglePickUp(item.id, !!item.is_picked_up)}
+                      className="w-4 h-4 text-[#D97736] bg-gray-100 border-gray-300 rounded focus:ring-[#D97736] cursor-pointer shrink-0"
+                      title={item.is_picked_up ? "Barang sudah diambil" : "Tandai jika barang sudah diambil"}
+                    />
+                  </td>
                   <td className="p-4 text-right whitespace-nowrap">{formatRupiah(item.price)}</td>
                   <td className="p-4 text-center whitespace-nowrap">{item.quantity}</td>
                   <td className="p-4 text-right font-medium text-gray-800 whitespace-nowrap">{formatRupiah(item.subtotal)}</td>

@@ -21,9 +21,10 @@ export default function RekapPage({ onBackToDashboard }) {
   const [error, setError] = useState(null);
   
   // State untuk Filter, Sort, Search, Pagination
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortOrder, setSortOrder] = useState('desc'); 
   const [page, setPage] = useState(1);
+  const [sortOrder, setSortOrder] = useState('desc'); 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [pickupFilter, setPickupFilter] = useState('all');
   const itemsPerPage = 10;
   
   // State Summary (Card di atas)
@@ -43,6 +44,7 @@ export default function RekapPage({ onBackToDashboard }) {
           quantity,
           price,
           subtotal,
+          is_picked_up,
           orders!inner (
             id,
             ordered_at,
@@ -64,7 +66,7 @@ export default function RekapPage({ onBackToDashboard }) {
 
       query = query.order('ordered_at', { referencedTable: 'orders', ascending: sortOrder === 'asc' });
 
-      if (!searchQuery) {
+      if (!searchQuery && pickupFilter === 'all') {
         const from = (page - 1) * itemsPerPage;
         const to = from + itemsPerPage - 1;
         query = query.range(from, to);
@@ -74,6 +76,13 @@ export default function RekapPage({ onBackToDashboard }) {
       if (dbError) throw dbError;
       
       let finalData = resultData || [];
+
+      if (pickupFilter !== 'all') {
+          finalData = finalData.filter(item => 
+              pickupFilter === 'picked' ? !!item.is_picked_up : !item.is_picked_up
+          );
+      }
+
       if (searchQuery) {
           const lowerQuery = searchQuery.toLowerCase();
           finalData = finalData.filter(item => 
@@ -81,7 +90,9 @@ export default function RekapPage({ onBackToDashboard }) {
               item.orders.buyer_name.toLowerCase().includes(lowerQuery) ||
               item.orders.invoice_number.toLowerCase().includes(lowerQuery)
           );
-          
+      }
+      
+      if (searchQuery || pickupFilter !== 'all') {
           const from = (page - 1) * itemsPerPage;
           finalData = finalData.slice(from, from + itemsPerPage);
       }
@@ -264,7 +275,24 @@ export default function RekapPage({ onBackToDashboard }) {
 
   useEffect(() => {
     fetchData();
-  }, [page, sortOrder, searchQuery]);
+  }, [page, sortOrder, searchQuery, pickupFilter]);
+
+  const handleTogglePickUp = async (orderItemId, currentValue) => {
+    try {
+      const { error } = await supabase
+        .from('order_items')
+        .update({ is_picked_up: !currentValue })
+        .eq('id', orderItemId);
+      if (error) throw error;
+      
+      setData(prevData => prevData.map(item => 
+        item.id === orderItemId ? { ...item, is_picked_up: !currentValue } : item
+      ));
+    } catch (err) {
+      console.error('Error toggling pick up status:', err);
+      alert('Gagal mengupdate status pengambilan (pastikan kolom is_picked_up sudah ada di database)');
+    }
+  };
 
   const handleOpenReceipt = (order) => {
     const items = data.filter(d => d.orders.invoice_number === order.invoice_number).map(d => ({
@@ -382,6 +410,17 @@ export default function RekapPage({ onBackToDashboard }) {
             />
 
             <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+              {/* Pickup Filter */}
+              <select 
+                className="w-full sm:w-auto px-4 py-2 bg-white border border-[#FFCBA4] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D96A12] text-sm text-[#4A3222]"
+                value={pickupFilter}
+                onChange={(e) => { setPickupFilter(e.target.value); setPage(1); }}
+              >
+                <option value="all">Semua Status</option>
+                <option value="picked">Sudah Diambil</option>
+                <option value="not_picked">Belum Diambil</option>
+              </select>
+
               {/* Sort */}
               <select 
                 className="w-full sm:w-auto px-4 py-2 bg-white border border-[#FFCBA4] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D96A12] text-sm text-[#4A3222]"
@@ -409,6 +448,7 @@ export default function RekapPage({ onBackToDashboard }) {
                   <th className="p-4 font-bold">Hotel</th>
                   <th className="p-4 font-bold">Kamar</th>
                   <th className="p-4 font-bold">Produk</th>
+                  <th className="p-4 font-bold text-center">Sudah Diambil</th>
                   <th className="p-4 font-bold text-right">Harga Satuan</th>
                   <th className="p-4 font-bold text-center">Jml</th>
                   <th className="p-4 font-bold text-right">Subtotal</th>
@@ -439,7 +479,18 @@ export default function RekapPage({ onBackToDashboard }) {
                           <td className="p-4 whitespace-nowrap align-top" rowSpan={item.rowSpanCount}>{item.orders.room_number || '-'}</td>
                         </>
                       )}
-                      <td className="p-4 min-w-[200px]">{item.products.name}</td>
+                      <td className="p-4 min-w-[200px]">
+                        <span className={item.is_picked_up ? "line-through text-gray-400" : ""}>{item.products.name}</span>
+                      </td>
+                      <td className="p-4 text-center">
+                        <input 
+                          type="checkbox" 
+                          checked={!!item.is_picked_up} 
+                          onChange={() => handleTogglePickUp(item.id, !!item.is_picked_up)}
+                          className="w-4 h-4 text-[#D97736] bg-[#FFFBF7] border-[#FFCBA4] rounded focus:ring-[#D97736] cursor-pointer shrink-0"
+                          title={item.is_picked_up ? "Barang sudah diambil" : "Tandai jika barang sudah diambil"}
+                        />
+                      </td>
                       <td className="p-4 text-right whitespace-nowrap">{formatRupiah(item.price)}</td>
                       <td className="p-4 text-center font-bold">{item.quantity}</td>
                       <td className="p-4 text-right font-bold whitespace-nowrap">{formatRupiah(item.subtotal)}</td>
