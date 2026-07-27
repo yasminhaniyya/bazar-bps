@@ -237,6 +237,7 @@ export default function AddProductModal({ isOpen, onClose, onSubmit, onDelete, m
 
         <label className="block text-xs text-slate-600 mb-1">Kategori</label>
         <select required value={category} onChange={(e) => setCategory(e.target.value)} className="w-full mb-3 px-3 py-2 border rounded text-sm focus:ring-1 focus:ring-[#E67E22] outline-none bg-white">
+          <option value="Makanan">Makanan</option>
           <option value="Kue & Roti">Kue & Roti</option>
           <option value="Minuman">Minuman</option>
           <option value="Keripik">Keripik</option>
