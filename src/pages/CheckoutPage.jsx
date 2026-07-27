@@ -334,10 +334,13 @@ export default function CheckoutPage({
           id: p.id,
           name: formatProvinceName(p.name)
         })).sort((a, b) => a.name.localeCompare(b.name));
+        formatted.unshift({ id: 'BPS_RI', name: 'BPS RI' });
         setProvincesList(formatted);
       } catch (error) {
         console.warn("Gagal memuat API provinsi, menggunakan data offline:", error);
-        setProvincesList([...fallbackProvinces].sort((a, b) => a.name.localeCompare(b.name)));
+        const fallback = [...fallbackProvinces].sort((a, b) => a.name.localeCompare(b.name));
+        fallback.unshift({ id: 'BPS_RI', name: 'BPS RI' });
+        setProvincesList(fallback);
       } finally {
         setIsRegionsLoading(false);
       }
@@ -353,6 +356,15 @@ export default function CheckoutPage({
     if (!selectedProvince) {
       return;
     }
+
+    if (selectedProvince.id === 'BPS_RI') {
+      const pusatCity = { id: 'BPS_RI_PUSAT', name: 'Pusat' };
+      setCitiesList([pusatCity]);
+      setSelectedCity(pusatCity);
+      setCityQuery('Pusat');
+      return;
+    }
+
     const fetchCities = async () => {
       setIsRegionsLoading(true);
       try {
@@ -1565,7 +1577,8 @@ export default function CheckoutPage({
                 </div>
 
                 {/* City Combobox */}
-                <div className="space-y-1.5 relative" ref={cityRef}>
+                {selectedProvince?.id !== 'BPS_RI' && (
+                  <div className="space-y-1.5 relative" ref={cityRef}>
                   <label className="block text-xs font-bold text-[#4A3222]">Kota <span className="text-rose-500">*</span></label>
                   <div
                     onClick={() => selectedProvince && setShowCityDropdown(true)}
@@ -1649,7 +1662,8 @@ export default function CheckoutPage({
                     </div>
                   )}
                 </div>
-              </div>
+              )}
+            </div>
 
               {/* Hotel & Room Number */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
