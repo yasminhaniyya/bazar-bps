@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { formatRupiah } from '../utils/formatCurrency';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
+import AdminReceiptModal from '../components/AdminReceiptModal';
 
 const parseLocation = (locString) => {
   if (!locString) return '-';
@@ -27,6 +28,9 @@ export default function RekapPage({ onBackToDashboard }) {
   
   // State Summary (Card di atas)
   const [summary, setSummary] = useState({ totalTx: 0, totalRevenue: 0, totalProducts: 0 });
+
+  // Modal State
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -82,7 +86,26 @@ export default function RekapPage({ onBackToDashboard }) {
           finalData = finalData.slice(from, from + itemsPerPage);
       }
 
-      setData(finalData);
+      let invoiceCounts = {};
+      finalData.forEach(item => {
+         let inv = item.orders.invoice_number;
+         invoiceCounts[inv] = (invoiceCounts[inv] || 0) + 1;
+      });
+
+      let currentInv = null;
+      let invoiceCounter = 0;
+      let processedData = finalData.map(item => {
+         let inv = item.orders.invoice_number;
+         if (inv !== currentInv) {
+             currentInv = inv;
+             invoiceCounter++;
+             return { ...item, isFirstInInvoice: true, rowSpanCount: invoiceCounts[inv], invoiceIndex: invoiceCounter };
+         } else {
+             return { ...item, isFirstInInvoice: false, invoiceIndex: invoiceCounter };
+         }
+      });
+
+      setData(processedData);
       fetchSummary();
 
     } catch (err) {
@@ -243,6 +266,32 @@ export default function RekapPage({ onBackToDashboard }) {
     fetchData();
   }, [page, sortOrder, searchQuery]);
 
+  const handleOpenReceipt = (order) => {
+    const items = data.filter(d => d.orders.invoice_number === order.invoice_number).map(d => ({
+      nama: d.products.name,
+      quantity: d.quantity,
+      harga: d.price
+    }));
+    
+    let subtotal = 0;
+    items.forEach(i => subtotal += (i.quantity * i.harga));
+
+    setSelectedInvoice({
+      invoiceNo: order.invoice_number,
+      orderTime: new Date(order.ordered_at).toLocaleString('id-ID'),
+      nama: order.buyer_name,
+      hotel: order.hotel || '',
+      kamar: order.room_number || '',
+      selectedCity: parseLocation(order.city),
+      selectedProvince: parseLocation(order.province),
+      whatsapp: order.phone || '',
+      notes: order.notes || '',
+      items: items,
+      subtotal: subtotal,
+      total: order.total_price
+    });
+  };
+
   return (
     <>
       <div className="fixed inset-0 bg-white z-[-2]" />
@@ -251,6 +300,15 @@ export default function RekapPage({ onBackToDashboard }) {
         style={{ backgroundImage: "url('/batik.jpeg')", backgroundRepeat: 'repeat', backgroundSize: '400px' }}
       />
       <div className="min-h-screen p-4 sm:p-8 text-[#4A3222]/80 font-['Plus_Jakarta_Sans'] relative z-10 bg-transparent">
+      
+      {selectedInvoice && (
+        <AdminReceiptModal 
+          isOpen={!!selectedInvoice} 
+          onClose={() => setSelectedInvoice(null)} 
+          invoiceData={selectedInvoice} 
+        />
+      )}
+
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Back Button */}
         <button
@@ -353,9 +411,11 @@ export default function RekapPage({ onBackToDashboard }) {
                   <th className="p-4 font-bold">Produk</th>
                   <th className="p-4 font-bold text-right">Harga Satuan</th>
                   <th className="p-4 font-bold text-center">Jml</th>
-                  <th className="p-4 font-bold text-right">Total</th>
+                  <th className="p-4 font-bold text-right">Subtotal</th>
+                  <th className="p-4 font-bold text-right">Total Belanja</th>
                   <th className="p-4 font-bold">Metode</th>
                   <th className="p-4 font-bold">Catatan</th>
+                  <th className="p-4 font-bold text-center">Aksi</th>
                 </tr>
               </thead>
               <tbody className="text-sm text-[#4A3222]">
@@ -366,21 +426,41 @@ export default function RekapPage({ onBackToDashboard }) {
                 ) : (
                   data.map((item, index) => (
                     <tr key={item.id} className="border-b border-[#FFCBA4]/30 hover:bg-[#FFFBF7] transition-colors">
-                      <td className="p-4 font-medium opacity-70">{(page - 1) * itemsPerPage + index + 1}</td>
-                      <td className="p-4 whitespace-nowrap">{new Date(item.orders.ordered_at).toLocaleString('id-ID')}</td>
-                      <td className="p-4 font-bold text-[#D96A12] whitespace-nowrap">{item.orders.invoice_number}</td>
-                      <td className="p-4 whitespace-nowrap font-medium">{item.orders.buyer_name}</td>
-                      <td className="p-4 whitespace-nowrap">{item.orders.phone || '-'}</td>
-                      <td className="p-4 whitespace-nowrap">{parseLocation(item.orders.province)}</td>
-                      <td className="p-4 whitespace-nowrap">{parseLocation(item.orders.city)}</td>
-                      <td className="p-4 whitespace-nowrap">{item.orders.hotel || '-'}</td>
-                      <td className="p-4 whitespace-nowrap">{item.orders.room_number || '-'}</td>
+                      {item.isFirstInInvoice && (
+                        <>
+                          <td className="p-4 font-medium opacity-70 align-top" rowSpan={item.rowSpanCount}>{(page - 1) * itemsPerPage + index + 1}</td>
+                          <td className="p-4 whitespace-nowrap align-top" rowSpan={item.rowSpanCount}>{new Date(item.orders.ordered_at).toLocaleString('id-ID')}</td>
+                          <td className="p-4 font-bold text-[#D96A12] whitespace-nowrap align-top" rowSpan={item.rowSpanCount}>{item.orders.invoice_number}</td>
+                          <td className="p-4 whitespace-nowrap font-medium align-top" rowSpan={item.rowSpanCount}>{item.orders.buyer_name}</td>
+                          <td className="p-4 whitespace-nowrap align-top" rowSpan={item.rowSpanCount}>{item.orders.phone || '-'}</td>
+                          <td className="p-4 whitespace-nowrap align-top" rowSpan={item.rowSpanCount}>{parseLocation(item.orders.province)}</td>
+                          <td className="p-4 whitespace-nowrap align-top" rowSpan={item.rowSpanCount}>{parseLocation(item.orders.city)}</td>
+                          <td className="p-4 whitespace-nowrap align-top" rowSpan={item.rowSpanCount}>{item.orders.hotel || '-'}</td>
+                          <td className="p-4 whitespace-nowrap align-top" rowSpan={item.rowSpanCount}>{item.orders.room_number || '-'}</td>
+                        </>
+                      )}
                       <td className="p-4 min-w-[200px]">{item.products.name}</td>
                       <td className="p-4 text-right whitespace-nowrap">{formatRupiah(item.price)}</td>
                       <td className="p-4 text-center font-bold">{item.quantity}</td>
                       <td className="p-4 text-right font-bold whitespace-nowrap">{formatRupiah(item.subtotal)}</td>
-                      <td className="p-4 whitespace-nowrap">{item.orders.payment_method}</td>
-                      <td className="p-4 whitespace-nowrap opacity-70">{item.orders.notes || '-'}</td>
+                      {item.isFirstInInvoice && (
+                        <>
+                          <td className="p-4 text-right font-bold whitespace-nowrap align-top" rowSpan={item.rowSpanCount}>{formatRupiah(item.orders.total_price)}</td>
+                          <td className="p-4 whitespace-nowrap align-top" rowSpan={item.rowSpanCount}>{item.orders.payment_method}</td>
+                          <td className="p-4 whitespace-nowrap opacity-70 align-top" rowSpan={item.rowSpanCount}>{item.orders.notes || '-'}</td>
+                          <td className="p-4 align-top" rowSpan={item.rowSpanCount}>
+                            <button
+                              onClick={() => handleOpenReceipt(item.orders)}
+                              className="px-3 py-1.5 bg-[#D96A12] text-white hover:bg-[#b5580f] rounded-md text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                              </svg>
+                              Cetak
+                            </button>
+                          </td>
+                        </>
+                      )}
                     </tr>
                   ))
                 )}

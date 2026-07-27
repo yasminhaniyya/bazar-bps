@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { formatRupiah } from '../../utils/formatCurrency';
+import AdminReceiptModal from '../../components/AdminReceiptModal';
 
 /**
  * Halaman Rekapitulasi Admin
@@ -19,6 +20,9 @@ export default function Rekapitulasi() {
   
   // State Summary (Card di atas)
   const [summary, setSummary] = useState({ totalTx: 0, totalRevenue: 0, totalProducts: 0 });
+
+  // Modal State
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -40,7 +44,12 @@ export default function Rekapitulasi() {
               buyer_name,
               payment_method,
               total_price,
-              notes
+              notes,
+              phone,
+              province,
+              city,
+              hotel,
+              room_number
             ),
             products!inner (
               name
@@ -75,7 +84,27 @@ export default function Rekapitulasi() {
             finalData = finalData.slice(from, from + itemsPerPage);
         }
 
-        setData(finalData);
+        // Compute rowSpans for current page
+        let invoiceCounts = {};
+        finalData.forEach(item => {
+           let inv = item.orders.invoice_number;
+           invoiceCounts[inv] = (invoiceCounts[inv] || 0) + 1;
+        });
+
+        let currentInv = null;
+        let invoiceCounter = 0;
+        let processedData = finalData.map(item => {
+           let inv = item.orders.invoice_number;
+           if (inv !== currentInv) {
+               currentInv = inv;
+               invoiceCounter++;
+               return { ...item, isFirstInInvoice: true, rowSpanCount: invoiceCounts[inv], invoiceIndex: invoiceCounter };
+           } else {
+               return { ...item, isFirstInInvoice: false, invoiceIndex: invoiceCounter };
+           }
+        });
+
+        setData(processedData);
 
         // Summary fetch inline to avoid missing dependency warning
         let summaryQuery = supabase.from('order_items').select('quantity, subtotal, orders!inner(id)');
@@ -126,7 +155,12 @@ export default function Rekapitulasi() {
             buyer_name,
             payment_method,
             total_price,
-            notes
+            notes,
+            phone,
+            province,
+            city,
+            hotel,
+            room_number
           ),
           products!inner (
             name
@@ -192,6 +226,44 @@ export default function Rekapitulasi() {
     window.location.href = '/admin/login';
   };
 
+  const handleOpenReceipt = (order) => {
+    const items = data.filter(d => d.orders.invoice_number === order.invoice_number).map(d => ({
+      nama: d.products.name,
+      quantity: d.quantity,
+      harga: d.price
+    }));
+    
+    let subtotal = 0;
+    items.forEach(i => subtotal += (i.quantity * i.harga));
+
+    let provName = '';
+    let cityName = '';
+    
+    // Parse if it's stringified JSON or plain string
+    try {
+      provName = typeof order.province === 'string' && order.province.startsWith('{') ? JSON.parse(order.province).name : (order.province?.name || order.province || '');
+      cityName = typeof order.city === 'string' && order.city.startsWith('{') ? JSON.parse(order.city).name : (order.city?.name || order.city || '');
+    } catch(e) {
+      provName = order.province || '';
+      cityName = order.city || '';
+    }
+
+    setSelectedInvoice({
+      invoiceNo: order.invoice_number,
+      orderTime: new Date(order.ordered_at).toLocaleString('id-ID'),
+      nama: order.buyer_name,
+      hotel: order.hotel || '',
+      kamar: order.room_number || '',
+      selectedCity: cityName,
+      selectedProvince: provName,
+      whatsapp: order.phone || '',
+      notes: order.notes || '',
+      items: items,
+      subtotal: subtotal,
+      total: order.total_price
+    });
+  };
+
   return (
     <div className="relative w-full min-h-screen bg-[#FDF6F0]">
       {/* Latar Belakang Batik - Opacity 35% */}
@@ -201,6 +273,14 @@ export default function Rekapitulasi() {
       />
       {/* Container Konten Utama */}
       <div className="relative z-10 flex flex-col font-sans pb-24 text-[#4A3222] p-4 sm:p-8">
+      
+      {selectedInvoice && (
+        <AdminReceiptModal 
+          isOpen={!!selectedInvoice} 
+          onClose={() => setSelectedInvoice(null)} 
+          invoiceData={selectedInvoice} 
+        />
+      )}
       
       {/* Header Banner */}
       <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -288,9 +368,11 @@ export default function Rekapitulasi() {
               <th className="p-4 font-semibold whitespace-nowrap">Nama Produk</th>
               <th className="p-4 font-semibold text-right whitespace-nowrap">Harga Satuan</th>
               <th className="p-4 font-semibold text-center whitespace-nowrap">Jml</th>
-              <th className="p-4 font-semibold text-right whitespace-nowrap">Total Harga</th>
+              <th className="p-4 font-semibold text-right whitespace-nowrap">Subtotal Item</th>
+              <th className="p-4 font-semibold text-right whitespace-nowrap">Total Belanja</th>
               <th className="p-4 font-semibold whitespace-nowrap">Metode</th>
               <th className="p-4 font-semibold whitespace-nowrap">Catatan</th>
+              <th className="p-4 font-semibold text-center whitespace-nowrap">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -301,16 +383,36 @@ export default function Rekapitulasi() {
             ) : (
               data.map((item, index) => (
                 <tr key={item.id} className="border-b hover:bg-gray-50 transition-colors text-sm">
-                  <td className="p-4 text-gray-500">{(page - 1) * itemsPerPage + index + 1}</td>
-                  <td className="p-4 whitespace-nowrap">{new Date(item.orders.ordered_at).toLocaleString('id-ID')}</td>
-                  <td className="p-4 font-medium text-gray-900 whitespace-nowrap">{item.orders.invoice_number}</td>
-                  <td className="p-4 whitespace-nowrap">{item.orders.buyer_name}</td>
+                  {item.isFirstInInvoice && (
+                    <>
+                      <td className="p-4 text-gray-500 align-top" rowSpan={item.rowSpanCount}>{(page - 1) * itemsPerPage + index + 1}</td>
+                      <td className="p-4 whitespace-nowrap align-top" rowSpan={item.rowSpanCount}>{new Date(item.orders.ordered_at).toLocaleString('id-ID')}</td>
+                      <td className="p-4 font-medium text-gray-900 whitespace-nowrap align-top" rowSpan={item.rowSpanCount}>{item.orders.invoice_number}</td>
+                      <td className="p-4 whitespace-nowrap align-top" rowSpan={item.rowSpanCount}>{item.orders.buyer_name}</td>
+                    </>
+                  )}
                   <td className="p-4 min-w-[200px]">{item.products.name}</td>
                   <td className="p-4 text-right whitespace-nowrap">{formatRupiah(item.price)}</td>
                   <td className="p-4 text-center whitespace-nowrap">{item.quantity}</td>
                   <td className="p-4 text-right font-medium text-gray-800 whitespace-nowrap">{formatRupiah(item.subtotal)}</td>
-                  <td className="p-4 whitespace-nowrap">{item.orders.payment_method}</td>
-                  <td className="p-4 whitespace-nowrap text-gray-600">{item.orders.notes || '-'}</td>
+                  {item.isFirstInInvoice && (
+                    <>
+                      <td className="p-4 font-bold text-gray-800 text-right whitespace-nowrap align-top" rowSpan={item.rowSpanCount}>{formatRupiah(item.orders.total_price)}</td>
+                      <td className="p-4 whitespace-nowrap align-top" rowSpan={item.rowSpanCount}>{item.orders.payment_method}</td>
+                      <td className="p-4 whitespace-nowrap text-gray-600 align-top" rowSpan={item.rowSpanCount}>{item.orders.notes || '-'}</td>
+                      <td className="p-4 align-top" rowSpan={item.rowSpanCount}>
+                        <button
+                          onClick={() => handleOpenReceipt(item.orders)}
+                          className="px-3 py-1.5 bg-[#4A3222] text-white hover:bg-[#3d2719] rounded-md text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                          </svg>
+                          Cetak
+                        </button>
+                      </td>
+                    </>
+                  )}
                 </tr>
               ))
             )}
