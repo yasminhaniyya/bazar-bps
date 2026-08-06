@@ -464,33 +464,6 @@ export default function Dashboard() {
                 </div>
               )}
             </>
-          ) : (role === 'Guest' || role === 'Admin') ? (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 animate-[fadeIn_0.5s_ease-out]">
-              <div className="bg-white p-8 md:p-12 rounded-3xl shadow-xl border border-[#FFCBA4]/50 max-w-lg w-full border-t-8 border-t-[#D96A12] text-center">
-                <div className="w-24 h-24 bg-[#FFFBF7] rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
-                  <svg className="w-12 h-12 text-[#D96A12]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    {role === 'Admin' ? (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" />
-                    ) : (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    )}
-                  </svg>
-                </div>
-                <h2 className="text-3xl font-extrabold text-[#4A3222] mb-4">Pemesanan Ditutup</h2>
-                <p className="text-lg text-[#4A3222]/90 leading-relaxed mb-4">
-                  {role === 'Admin' 
-                    ? "Katalog telah ditutup untuk pengunjung." 
-                    : "Terima kasih telah mengunjungi katalog Bazar DWP BPS."}
-                </p>
-                <div className="bg-[#FFFBF7] border border-[#FFCBA4] p-4 rounded-xl inline-block w-full">
-                  <p className="text-md text-[#D96A12] font-medium leading-relaxed">
-                    {role === 'Admin'
-                      ? "Terima kasih telah melayani customer dengan baik, seluruh proses pemesanan bazar saat ini telah selesai! ✨"
-                      : "Mohon maaf, periode pemesanan produk untuk saat ini telah ditutup. Sampai jumpa di event bazar kami selanjutnya! ✨"}
-                  </p>
-                </div>
-              </div>
-            </div>
           ) : (
             <>
               {/* 2. Banner */}
