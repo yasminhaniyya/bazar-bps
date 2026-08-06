@@ -24,6 +24,7 @@ export default function Rekapitulasi() {
 
   // Modal State
   const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [proofModalUrl, setProofModalUrl] = useState(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -50,7 +51,8 @@ export default function Rekapitulasi() {
             province,
             city,
             hotel,
-            room_number
+            room_number,
+            payment_proof
           ),
           products!inner (
             name
@@ -171,7 +173,8 @@ export default function Rekapitulasi() {
             province,
             city,
             hotel,
-            room_number
+            room_number,
+            payment_proof
           ),
           products!inner (
             name
@@ -310,6 +313,22 @@ export default function Rekapitulasi() {
         />
       )}
       
+      {proofModalUrl && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-4" onClick={() => setProofModalUrl(null)}>
+          <div className="relative bg-white rounded-xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center p-4 border-b">
+              <h3 className="font-bold text-lg text-gray-800">Bukti Pembayaran</h3>
+              <button onClick={() => setProofModalUrl(null)} className="text-gray-500 hover:text-black text-2xl leading-none">
+                &times;
+              </button>
+            </div>
+            <div className="overflow-auto p-4 flex-1 flex justify-center items-center bg-gray-50">
+              <img src={proofModalUrl} alt="Bukti Pembayaran" className="max-w-full max-h-full object-contain rounded" />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header Banner */}
       <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-xl sm:text-2xl font-bold text-gray-800" style={{ fontFamily: 'Montserrat, sans-serif' }}>
@@ -412,6 +431,7 @@ export default function Rekapitulasi() {
               <th className="p-4 font-semibold text-right whitespace-nowrap">Total Belanja</th>
               <th className="p-4 font-semibold whitespace-nowrap">Metode</th>
               <th className="p-4 font-semibold whitespace-nowrap">Catatan</th>
+              <th className="p-4 font-semibold text-center whitespace-nowrap">Bukti</th>
               <th className="p-4 font-semibold text-center whitespace-nowrap">Aksi</th>
             </tr>
           </thead>
@@ -451,6 +471,18 @@ export default function Rekapitulasi() {
                       <td className="p-4 font-bold text-gray-800 text-right whitespace-nowrap align-top" rowSpan={item.rowSpanCount}>{formatRupiah(item.orders.total_price)}</td>
                       <td className="p-4 whitespace-nowrap align-top" rowSpan={item.rowSpanCount}>{item.orders.payment_method}</td>
                       <td className="p-4 whitespace-nowrap text-gray-600 align-top" rowSpan={item.rowSpanCount}>{item.orders.notes || '-'}</td>
+                      <td className="p-4 text-center align-top" rowSpan={item.rowSpanCount}>
+                        {item.orders.payment_proof ? (
+                          <button
+                            onClick={() => setProofModalUrl(item.orders.payment_proof)}
+                            className="px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-md text-xs font-semibold transition-colors shadow-sm"
+                          >
+                            Lihat Bukti
+                          </button>
+                        ) : (
+                          <span className="text-gray-400 text-xs italic">Tidak ada</span>
+                        )}
+                      </td>
                       <td className="p-4 align-top" rowSpan={item.rowSpanCount}>
                         <button
                           onClick={() => handleOpenReceipt(item.orders)}

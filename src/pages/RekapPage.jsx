@@ -32,6 +32,7 @@ export default function RekapPage({ onBackToDashboard }) {
 
   // Modal State
   const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [proofModalUrl, setProofModalUrl] = useState(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -56,6 +57,7 @@ export default function RekapPage({ onBackToDashboard }) {
             hotel,
             room_number,
             payment_method,
+            payment_proof,
             total_price,
             notes
           ),
@@ -170,6 +172,7 @@ export default function RekapPage({ onBackToDashboard }) {
             hotel,
             room_number,
             payment_method,
+            payment_proof,
             total_price,
             notes
           ),
@@ -382,6 +385,22 @@ export default function RekapPage({ onBackToDashboard }) {
             </div>
           )}
 
+          {proofModalUrl && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-4" onClick={() => setProofModalUrl(null)}>
+              <div className="relative bg-white rounded-xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+                <div className="flex justify-between items-center p-4 border-b">
+                  <h3 className="font-bold text-lg text-[#4A3222]">Bukti Pembayaran</h3>
+                  <button onClick={() => setProofModalUrl(null)} className="text-[#4A3222]/60 hover:text-black text-2xl leading-none">
+                    &times;
+                  </button>
+                </div>
+                <div className="overflow-auto p-4 flex-1 flex justify-center items-center bg-[#FFFBF7]">
+                  <img src={proofModalUrl} alt="Bukti Pembayaran" className="max-w-full max-h-full object-contain rounded" />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="bg-[#FFFBF7] p-5 rounded-xl border border-[#FFCBA4]/60">
@@ -455,6 +474,7 @@ export default function RekapPage({ onBackToDashboard }) {
                   <th className="p-4 font-bold text-right">Total Belanja</th>
                   <th className="p-4 font-bold">Metode</th>
                   <th className="p-4 font-bold">Catatan</th>
+                  <th className="p-4 font-bold text-center">Bukti</th>
                   <th className="p-4 font-bold text-center">Aksi</th>
                 </tr>
               </thead>
@@ -499,6 +519,18 @@ export default function RekapPage({ onBackToDashboard }) {
                           <td className="p-4 text-right font-bold whitespace-nowrap align-top" rowSpan={item.rowSpanCount}>{formatRupiah(item.orders.total_price)}</td>
                           <td className="p-4 whitespace-nowrap align-top" rowSpan={item.rowSpanCount}>{item.orders.payment_method}</td>
                           <td className="p-4 whitespace-nowrap opacity-70 align-top" rowSpan={item.rowSpanCount}>{item.orders.notes || '-'}</td>
+                          <td className="p-4 text-center align-top" rowSpan={item.rowSpanCount}>
+                            {item.orders.payment_proof ? (
+                              <button
+                                onClick={() => setProofModalUrl(item.orders.payment_proof)}
+                                className="px-3 py-1.5 bg-[#FFFBF7] text-[#D96A12] border border-[#FFCBA4] hover:bg-[#FFCBA4] rounded-md text-xs font-semibold transition-colors shadow-sm whitespace-nowrap"
+                              >
+                                Lihat Bukti
+                              </button>
+                            ) : (
+                              <span className="text-[#4A3222]/50 text-xs italic">Tidak ada</span>
+                            )}
+                          </td>
                           <td className="p-4 align-top" rowSpan={item.rowSpanCount}>
                             <button
                               onClick={() => handleOpenReceipt(item.orders)}
